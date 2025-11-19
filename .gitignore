@@ -1,1 +1,6 @@
-build
+build/
+.vscode/
+*.dot
+*.png
+*.pdf
+*.svg
