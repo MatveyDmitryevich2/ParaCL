@@ -28,6 +28,16 @@ VAR     [A-Za-z_][A-Za-z0-9_]*
 "}"     { PRINTORRETURN("}")       }
 "("     { PRINTORRETURN("(")       }
 ")"     { PRINTORRETURN(")")       }
+"=="    { PRINTORRETURN("==")      }
+"!="    { PRINTORRETURN("!=")      }
+"<="    { PRINTORRETURN("<=")      }
+">="    { PRINTORRETURN(">=")      }
+"<"     { PRINTORRETURN("<")       }
+">"     { PRINTORRETURN(">")       }
+"!"     { PRINTORRETURN("!")       }
+"&&"    { PRINTORRETURN("&&")      }
+"||"    { PRINTORRETURN("||")      }
+";"     { PRINTORRETURN(";")       }
 "while" { PRINTORRETURN("WHILE")   }
 "if"    { PRINTORRETURN("IF")      }
 "else"  { PRINTORRETURN("ELSE")    }
