@@ -10,17 +10,17 @@ flex_target(scanner
     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc
 )
 
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
     source/main.cpp
     ${FLEX_scanner_OUTPUTS}
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PRIVATE 
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PRIVATE 
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )

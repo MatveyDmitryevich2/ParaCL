@@ -1,6 +1,8 @@
 %option c++
+%option noyywrap
 
 %{
+    #include <iostream>
     using std::cout;
     using std::endl;
 
@@ -10,13 +12,13 @@
 WS      [ \t\v]+
 NL      [\n]+
 
-NUMBER  [0-9][1-9]*
-
 VAR     [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
-{NUMBER} | [0] { PRINTORRETURN("NUMBER") }
+"0"       { PRINTORRETURN("NUMBER") }
+[1-9][0-9]* { PRINTORRETURN("NUMBER") }
+
 {WS}    /* ничего                 */
 {NL}    /* для работы с ошибками  */
 "="     { PRINTORRETURN("=")       }
