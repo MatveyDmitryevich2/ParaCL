@@ -10,18 +10,15 @@
 WS      [ \t\v]+
 NL      [\n]+
 
-NUMBER  [0-9]
-NUMBER1 [1-9]
-NUMBER0 [0]
+NUMBER  [0-9][1-9]*
 
 VAR     [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
-{NUMBER1}{NUMBER}*|{NUMBER0} { PRINTORRETURN("NUMBER") }
+{NUMBER} | [0] { PRINTORRETURN("NUMBER") }
 {WS}    /* ничего                 */
 {NL}    /* для работы с ошибками  */
-{VAR}   { PRINTORRETURN("VAR")     }
 "="     { PRINTORRETURN("=")       }
 "+"     { PRINTORRETURN("+")       }
 "-"     { PRINTORRETURN("-")       }
@@ -36,6 +33,7 @@ VAR     [A-Za-z_][A-Za-z0-9_]*
 "else"  { PRINTORRETURN("ELSE")    }
 "print" { PRINTORRETURN("PRINT")   }
 "?"     { PRINTORRETURN("SCAN")    }
+{VAR}   { PRINTORRETURN("VAR")     }
 .       { PRINTORRETURN("UNKNOWN") }
 
 %%
