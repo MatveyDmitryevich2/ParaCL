@@ -1,13 +1,9 @@
 #include <iostream>
 
-#include <FlexLexer.h>
+extern int yyparse();
 
 int main()
 {
-    FlexLexer* lexer = new yyFlexLexer;
-    while (lexer->yylex() != 0)
-    {
-    }
-
-    delete lexer;
+    std::cout << "ParaCL Parser" << std::endl;
+    return yyparse();
 }
