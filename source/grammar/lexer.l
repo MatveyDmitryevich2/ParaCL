@@ -1,51 +1,48 @@
-%option c++
-%option noyywrap
-
 %{
-    #include <iostream>
-    using std::cout;
-    using std::endl;
-
-    #define PRINTORRETURN(a) cout << a << " <" << yytext << ">" << endl; return 1;
+#include "parser.tab.hpp"
+#include <iostream>
+#include <string>
 %}
 
-WS      [ \t\v]+
-NL      [\n]+
-
-VAR     [A-Za-z_][A-Za-z0-9_]*
+%option noyywrap
 
 %%
 
-"0"       { PRINTORRETURN("NUMBER") }
-[1-9][0-9]* { PRINTORRETURN("NUMBER") }
+[0-9]+          {
+    yylval.number = std::stoi(yytext);
+    std::cout << "LEXER: NUMBER '" << yytext << "'" << std::endl;
+    return NUMBER;
+}
 
-{WS}    /* ничего                 */
-{NL}    /* для работы с ошибками  */
-"="     { PRINTORRETURN("=")       }
-"+"     { PRINTORRETURN("+")       }
-"-"     { PRINTORRETURN("-")       }
-"/"     { PRINTORRETURN("/")       }
-"*"     { PRINTORRETURN("*")       }
-"{"     { PRINTORRETURN("{")       }
-"}"     { PRINTORRETURN("}")       }
-"("     { PRINTORRETURN("(")       }
-")"     { PRINTORRETURN(")")       }
-"=="    { PRINTORRETURN("==")      }
-"!="    { PRINTORRETURN("!=")      }
-"<="    { PRINTORRETURN("<=")      }
-">="    { PRINTORRETURN(">=")      }
-"<"     { PRINTORRETURN("<")       }
-">"     { PRINTORRETURN(">")       }
-"!"     { PRINTORRETURN("!")       }
-"&&"    { PRINTORRETURN("&&")      }
-"||"    { PRINTORRETURN("||")      }
-";"     { PRINTORRETURN(";")       }
-"while" { PRINTORRETURN("WHILE")   }
-"if"    { PRINTORRETURN("IF")      }
-"else"  { PRINTORRETURN("ELSE")    }
-"print" { PRINTORRETURN("PRINT")   }
-"?"     { PRINTORRETURN("SCAN")    }
-{VAR}   { PRINTORRETURN("VAR")     }
-.       { PRINTORRETURN("UNKNOWN") }
+
+"while"         { std::cout << "LEXER: WHILE" << std::endl; return WHILE; }
+"if"            { std::cout << "LEXER: IF" << std::endl; return IF; }
+"print"         { std::cout << "LEXER: PRINT" << std::endl; return PRINT; }
+
+[a-zA-Z_][a-zA-Z0-9_]* {
+    yylval.string = new std::string(yytext);
+    std::cout << "LEXER: VAR '" << yytext << "'" << std::endl;
+    return VAR;
+}
+
+[ \t\n]         { /* Skip space */ }
+
+"+"             { std::cout << "LEXER: '+'" << std::endl; return '+'; }
+"-"             { std::cout << "LEXER: '-'" << std::endl; return '-'; }
+"*"             { std::cout << "LEXER: '*'" << std::endl; return '*'; }
+"/"             { std::cout << "LEXER: '/'" << std::endl; return '/'; }
+
+"("             { std::cout << "LEXER: '('" << std::endl; return '('; }
+")"             { std::cout << "LEXER: ')'" << std::endl; return ')'; }
+"{"             { std::cout << "LEXER: '{'" << std::endl; return '{'; }
+"}"             { std::cout << "LEXER: '}'" << std::endl; return '}'; }
+
+"="             { std::cout << "LEXER: '='" << std::endl; return '='; }
+";"             { std::cout << "LEXER: ';'" << std::endl; return ';'; }
+
+.               {
+    std::cout << "LEXER: Unknown '" << yytext << "'" << std::endl;
+    return 0;
+}
 
 %%
