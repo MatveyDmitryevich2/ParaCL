@@ -25,7 +25,8 @@
     return VAR;
 }
 
-[ \t\n]         { /* Skip space */ }
+[ \t\n]           { /* Skip space and tabs*/ }
+
 
 "+"             { std::cout << "LEXER: '+'" << std::endl; return '+'; }
 "-"             { std::cout << "LEXER: '-'" << std::endl; return '-'; }
@@ -40,9 +41,9 @@
 "="             { std::cout << "LEXER: '='" << std::endl; return '='; }
 ";"             { std::cout << "LEXER: ';'" << std::endl; return ';'; }
 
-.               {
-    std::cout << "LEXER: Unknown '" << yytext << "'" << std::endl;
-    return 0;
-}
 
+.               {
+
+    return yytext[0];
+}
 %%

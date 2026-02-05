@@ -5,11 +5,14 @@
 extern int yylineno;
 extern int yylex(void);
 
-void yyerror(const char* s);
+void yyerror(const char* msg)
+{
+    std::cerr << "Parser ERROR at line " << yylineno << ": " << msg << std::endl;
+}
 
 void print_rule(const char* rule)
 {
-    std::cout << rule << std::endl;
+    std::cout << "Parser: " << rule << std::endl;
 }
 %}
 
@@ -31,39 +34,36 @@ void print_rule(const char* rule)
 
 %%
 
-program: stmt_list { std::cout << " Correct!\n"; }
+program: stmt_list { std::cout << "Parser: Correct!\n"; }
 ;
 
-stmt_list: stmt | stmt_list stmt
+stmt_list: stmt { print_rule("stmt_list: single statement"); }
+    | stmt_list stmt { print_rule("stmt_list: another statement added"); }
 ;
 
 stmt:
     VAR '=' expr ';' {
-        print_rule("assign");
+        print_rule("stmt: assignment");
         delete $1;
     }
-    | PRINT '(' expr ')' ';' { print_rule("Print"); }
-    | WHILE '(' expr ')' stmt { print_rule("While"); }
-    | IF '(' expr ')' stmt { print_rule("If"); }
-    | '{' stmt_list '}' { print_rule("Block"); }
+    | PRINT '(' expr ')' ';' { print_rule("stmt: print statement"); }
+    | WHILE '(' expr ')' stmt { print_rule("stmt: while loop"); }
+    | IF '(' expr ')' stmt { print_rule("stmt: if statement"); }
+    | '{' stmt_list '}' { print_rule("stmt: block"); }
 ;
 
 expr:
-    expr '+' expr { print_rule("ADD"); }
-    | expr '-' expr { print_rule("SUB"); }
-    | expr '*' expr { print_rule("MUL"); }
-    | expr '/' expr { print_rule("DIV"); }
-    | '(' expr ')' { print_rule("Parens"); }
-    | NUMBER { print_rule("NUM"); }
+    expr '+' expr { print_rule("expr: addition"); }
+    | expr '-' expr { print_rule("expr: subtraction"); }
+    | expr '*' expr { print_rule("expr: multiplication"); }
+    | expr '/' expr { print_rule("expr: division"); }
+    | '(' expr ')' { print_rule("expr: parentheses"); }
+    | NUMBER { print_rule("expr: number literal"); }
     | VAR {
-        print_rule("VAR");
+        print_rule("expr: variable reference");
         delete $1;
     }
 ;
 
 %%
 
-void yyerror(const char* msg)
-{
-    std::cerr << "ERROR " << yylineno << ": " << msg << std::endl;
-}
