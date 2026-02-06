@@ -1,5 +1,11 @@
-200 + 2 = 400 - 0 * 198 = 502 - 200}}{}) while if)(+=**)print ?
-
-
-piska = 444
-while (1 > 2)
+i = 0;
+sum = 0;
+while (i < 10 && !(i == 7)) {
+    sum = sum + i * 2;
+    if (sum >= 20 || i == 5) {
+        print(sum);
+    }
+    i = i + 1;
+}
+print(i);
+print(sum);
