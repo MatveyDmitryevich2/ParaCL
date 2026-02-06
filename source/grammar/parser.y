@@ -28,7 +28,7 @@ void print_rule(const char* rule)
 %token <number> NUMBER
 %token <string> VAR
 %token WHILE IF PRINT SCANF
-%token EQ NE LE GE L G AND OR NOT 
+%token EQ NE LE GE L G AND OR NOT
 
 %destructor { delete $$; } <string>
 
@@ -38,14 +38,15 @@ void print_rule(const char* rule)
 %left LE GE L G
 %left '+' '-'
 %left '*' '/'
-%right NOT 
+%right NOT
 
 %%
 
 program: stmt_list { std::cout << "Parser: Correct!\n"; }
 ;
 
-stmt_list: stmt      { print_rule("stmt_list: single statement");        }
+stmt_list: /* empty */         { print_rule("stmt_list: empty"); }
+    | stmt      { print_rule("stmt_list: single statement");        }
     | stmt_list stmt { print_rule("stmt_list: another statement added"); }
 ;
 
@@ -76,7 +77,7 @@ expr:
 
     | '(' expr ')'   { print_rule("expr: parentheses");             }
 
-    | NUMBER         { print_rule("expr: number literal");          } 
+    | NUMBER         { print_rule("expr: number literal");          }
     | VAR            { print_rule("expr: variable reference");      }
 
     | SCANF          { print_rule("expr: read from stdin (scanf)"); }
