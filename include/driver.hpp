@@ -73,6 +73,16 @@ public:
     {
         return root_->evaluate();
     }
+    // ===== ДЛЯ ОТЛАДКИ ДЕРЕВА =====
+    const BlockStmt* get_root() const
+    {
+        return root_.get();
+    }
+
+    void set_root(BlockStmt* new_root)
+    {
+        root_.reset(new_root);
+    }
 };
 
 } // namespace language
