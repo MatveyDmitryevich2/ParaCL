@@ -138,6 +138,15 @@ public:
     int evaluate() override;
     void add_statement(std::unique_ptr<IStatement> stmt);
 
+    size_t get_statement_count() const
+    {
+        return statements_.size();
+    }
+    const IStatement* get_statement(size_t i) const
+    {
+        return statements_[i].get();
+    }
+
 private:
     std::vector<std::unique_ptr<IStatement>> statements_;
 };

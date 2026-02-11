@@ -54,30 +54,62 @@ namespace language {
 
 %%
 
-program: stmt_list { }
+program: stmt_list {
+    driver->set_root(static_cast<language::BlockStmt*>($1));
+    std::cout << " Parsing completed successfully\n";
+}
+;
 
-stmt_list: %empty { $$ = nullptr; }
-         | stmt_list stmt { $$ = nullptr; }
+stmt_list: %empty { $$ = new language::BlockStmt(); }
+         | stmt_list stmt {
+    language::BlockStmt* block = static_cast<language::BlockStmt*>($1);
+    block->add_statement(std::unique_ptr<language::IStatement>($2));
+    $$ = block;
+}
+;
 
 stmt: VAR '=' expr ';' {
-    driver->add_assignment(*$1, $3);
+    $$ = new language::Assignment(*$1, std::unique_ptr<language::IExpression>($3));
     delete $1;
-    $$ = nullptr;
-
 }
     | PRINT '(' expr ')' ';' {
-    driver->add_print($3);
-    $$ = nullptr;
+    $$ = new language::PrintStmt(std::unique_ptr<language::IExpression>($3));
 }
     | WHILE '(' expr ')' stmt {
-    driver->add_while($3, $5);
-    $$ = nullptr;
+
+    language::BlockStmt* body_block = dynamic_cast<language::BlockStmt*>($5);
+    if (!body_block) {
+        body_block = new language::BlockStmt();
+        body_block->add_statement(std::unique_ptr<language::IStatement>($5));
+    }
+    $$ = new language::WhileStmt(
+        std::unique_ptr<language::IExpression>($3),
+        std::unique_ptr<language::IStatement>(body_block)
+    );
 }
     | IF '(' expr ')' stmt opt_else {
-    if ($6) driver->add_if($3, $5, $6);
-    else driver->add_if($3, $5);
+
+    language::BlockStmt* then_block = dynamic_cast<language::BlockStmt*>($5);
+    if (!then_block) {
+        then_block = new language::BlockStmt();
+        then_block->add_statement(std::unique_ptr<language::IStatement>($5));
+    }
+
+    language::BlockStmt* else_block = nullptr;
+    if ($6) {
+        else_block = dynamic_cast<language::BlockStmt*>($6);
+        if (!else_block) {
+            else_block = new language::BlockStmt();
+            else_block->add_statement(std::unique_ptr<language::IStatement>($6));
+        }
+    }
+    $$ = new language::IfStmt(
+        std::unique_ptr<language::IExpression>($3),
+        std::unique_ptr<language::IStatement>(then_block),
+        else_block ? std::unique_ptr<language::IStatement>(else_block) : nullptr
+    );
 }
-    | '{' stmt_list '}' { $$ = nullptr; }
+    | '{' stmt_list '}' { $$ = $2; }
 ;
 
 opt_else: ELSE stmt { $$ = $2; }
