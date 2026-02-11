@@ -19,7 +19,7 @@
 "while"         { std::cout << "LEXER: WHILE"  << std::endl; return WHILE; }
 "if"            { std::cout << "LEXER: IF"     << std::endl; return IF;    }
 "print"         { std::cout << "LEXER: PRINT"  << std::endl; return PRINT; }
-"?"             { std::cout << "LEXER: SACANF" << std::endl; return SCANF; }
+"?"             { std::cout << "LEXER: SCANF" << std::endl; return SCANF; }
 
 
 [a-zA-Z_][a-zA-Z0-9_]* {

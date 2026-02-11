@@ -39,7 +39,15 @@ public:
         ADD,
         SUB,
         MUL,
-        DIV
+        DIV,
+        OR,
+        AND,
+        EQ,
+        NE,
+        L,
+        G,
+        LE,
+        GE
     };
 
 private:
@@ -83,18 +91,55 @@ public:
     IExpression* get_expr() const;
 };
 
-class BlockStmt : public IStatement
+class ScanfExpr : public IExpression
+{
+public:
+    ScanfExpr();
+    int evaluate() override;
+};
+
+class IfStmt : public IStatement
 {
 private:
-    std::vector<std::unique_ptr<IStatement>> statements_;
+    std::unique_ptr<IExpression> condition_;
+    std::unique_ptr<IStatement> then_branch_;
+    std::unique_ptr<IStatement> else_branch_; // nullptr если нет else
 
 public:
-    BlockStmt();
-    void add_statement(std::unique_ptr<IStatement> stmt);
+    IfStmt(std::unique_ptr<IExpression> condition,
+           std::unique_ptr<IStatement> then_branch,
+           std::unique_ptr<IStatement> else_branch = nullptr);
     int evaluate() override;
 
-    size_t get_statement_count() const;
-    IStatement* get_statement(size_t index) const;
+    IExpression* get_condition() const;
+    IStatement* get_then_branch() const;
+    IStatement* get_else_branch() const;
+};
+
+class WhileStmt : public IStatement
+{
+private:
+    std::unique_ptr<IExpression> condition_;
+    std::unique_ptr<IStatement> body_;
+
+public:
+    WhileStmt(std::unique_ptr<IExpression> condition,
+              std::unique_ptr<IStatement> body);
+    int evaluate() override;
+
+    IExpression* get_condition() const;
+    IStatement* get_body() const;
+};
+
+class BlockStmt : public IStatement
+{
+public:
+    BlockStmt() = default;
+    int evaluate() override;
+    void add_statement(std::unique_ptr<IStatement> stmt);
+
+private:
+    std::vector<std::unique_ptr<IStatement>> statements_;
 };
 
 } // namespace language
