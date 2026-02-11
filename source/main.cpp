@@ -1,22 +1,25 @@
+#include "driver.hpp"
 #include <iostream>
 
-extern int yyparse();
+extern int yyparse(language::Driver* driver);
 
 int main()
 {
-    std::cout << "ParaCL Parser" << std::endl;
-    std::cout << "Enter statements (empty line to exit):" << std::endl;
+    language::Driver driver;
 
-    int result = yyparse();
+    std::cout << "ParaCL Parser\n";
+    std::cout << "Enter program (Ctrl+D to finish):\n\n";
 
-    if (result == 0)
+    if (yyparse(&driver) == 0)
     {
-        std::cout << "Parsing completed successfully" << std::endl;
+        std::cout << "\n AST built successfully!\n";
+        std::cout
+            << "(Tree is stored in driver, ready for further processing)\n";
     }
     else
     {
-        std::cout << "Parsing failed with error" << std::endl;
+        std::cerr << "\n Parsing failed\n";
     }
 
-    return result;
+    return 0;
 }
