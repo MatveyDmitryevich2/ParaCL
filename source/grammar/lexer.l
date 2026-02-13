@@ -19,7 +19,7 @@
 "while"         { return WHILE; }
 "if"            { return IF;    }
 "print"         { return PRINT; }
-"?"             {return SCANF; }
+"?"             { return SCANF; }
 
 
 [a-zA-Z_][a-zA-Z0-9_]* {
@@ -28,10 +28,10 @@
     return VAR;
 }
 
-[ \t\r\n]+           { /* Skip space and tabs*/ }
+[ \t\r\n]+      { /* Skip space and tabs*/ }
 
 
-"+"             {  return '+';  }
+"+"             {  return '+';  } // FIXME
 "-"             {  return '-';  }
 "*"             {  return '*';  }
 "/"             {  return '/';  }

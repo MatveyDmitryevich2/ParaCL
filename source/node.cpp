@@ -65,7 +65,7 @@ language::BinaryOp::BinaryOp(Op op, std::unique_ptr<IExpression> left,
 int language::BinaryOp::evaluate()
 {
     int left_val = left_->evaluate();
-    int right_val = right_->evaluate();
+    int right_val = right_->evaluate(); //FIXME - тут надо исправить, не всегда надо вычислять оба, если один уже тру тогда второй не надо
 
     switch (op_)
     {
@@ -110,12 +110,12 @@ language::BinaryOp::Op language::BinaryOp::get_op() const
     return op_;
 }
 
-language::IExpression* language::BinaryOp::get_left() const
+const language::IExpression* language::BinaryOp::get_left() const
 {
     return left_.get();
 }
 
-language::IExpression* language::BinaryOp::get_right() const
+const language::IExpression* language::BinaryOp::get_right() const
 {
     return right_.get();
 }
@@ -140,7 +140,7 @@ const std::string& language::Assignment::get_var_name() const
     return var_name_;
 }
 
-language::IExpression* language::Assignment::get_expr() const
+const language::IExpression* language::Assignment::get_expr() const
 {
     return expr_.get();
 }
@@ -159,7 +159,7 @@ int language::PrintStmt::evaluate()
     return value;
 }
 
-language::IExpression* language::PrintStmt::get_expr() const
+const language::IExpression* language::PrintStmt::get_expr() const
 {
     return expr_.get();
 }
@@ -206,17 +206,17 @@ int language::IfStmt::evaluate()
     return 0;
 }
 
-language::IExpression* language::IfStmt::get_condition() const
+const language::IExpression* language::IfStmt::get_condition() const
 {
     return condition_.get();
 }
 
-language::IStatement* language::IfStmt::get_then_branch() const
+const language::IStatement* language::IfStmt::get_then_branch() const
 {
     return then_branch_.get();
 }
 
-language::IStatement* language::IfStmt::get_else_branch() const
+const language::IStatement* language::IfStmt::get_else_branch() const
 {
     return else_branch_.get();
 }
@@ -237,12 +237,12 @@ int language::WhileStmt::evaluate()
     return 0;
 }
 
-language::IExpression* language::WhileStmt::get_condition() const
+const language::IExpression* language::WhileStmt::get_condition() const
 {
     return condition_.get();
 }
 
-language::IStatement* language::WhileStmt::get_body() const
+const language::IStatement* language::WhileStmt::get_body() const
 {
     return body_.get();
 }
