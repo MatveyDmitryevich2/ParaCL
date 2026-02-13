@@ -61,8 +61,8 @@ public:
     int evaluate() override;
 
     Op get_op() const;
-    IExpression* get_left() const;
-    IExpression* get_right() const;
+    const IExpression* get_left() const;
+    const IExpression* get_right() const;
 };
 
 class Assignment : public IStatement
@@ -76,7 +76,7 @@ public:
     int evaluate() override;
 
     const std::string& get_var_name() const;
-    IExpression* get_expr() const;
+    const IExpression* get_expr() const;
 };
 
 class PrintStmt : public IStatement
@@ -88,7 +88,7 @@ public:
     PrintStmt(std::unique_ptr<IExpression> expr);
     int evaluate() override;
 
-    IExpression* get_expr() const;
+    const IExpression* get_expr() const;
 };
 
 class ScanfExpr : public IExpression
@@ -111,9 +111,9 @@ public:
            std::unique_ptr<IStatement> else_branch = nullptr);
     int evaluate() override;
 
-    IExpression* get_condition() const;
-    IStatement* get_then_branch() const;
-    IStatement* get_else_branch() const;
+    const IExpression* get_condition() const;
+    const IStatement* get_then_branch() const;
+    const IStatement* get_else_branch() const;
 };
 
 class WhileStmt : public IStatement
@@ -127,8 +127,8 @@ public:
               std::unique_ptr<IStatement> body);
     int evaluate() override;
 
-    IExpression* get_condition() const;
-    IStatement* get_body() const;
+    const IExpression* get_condition() const;
+    const IStatement* get_body() const;
 };
 
 class BlockStmt : public IStatement

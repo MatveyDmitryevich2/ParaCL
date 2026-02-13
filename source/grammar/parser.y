@@ -34,7 +34,7 @@ namespace language {
 
 %token <number> NUMBER
 %token <string> VAR
-%token WHILE IF PRINT SCANF ELSE
+%token WHILE IF PRINT SCANF ELSE // FIXME 
 %token EQ NE LE GE L G AND OR NOT
 
 %type <expr> expr
@@ -48,7 +48,7 @@ namespace language {
 %left AND
 %left EQ NE
 %left LE GE L G
-%left '+' '-'
+%left '+' '-' // FIXME 
 %left '*' '/'
 %right NOT
 
@@ -60,12 +60,15 @@ program: stmt_list {
 }
 ;
 
-stmt_list: %empty { $$ = new language::BlockStmt(); }
-         | stmt_list stmt {
-    language::BlockStmt* block = static_cast<language::BlockStmt*>($1);
-    block->add_statement(std::unique_ptr<language::IStatement>($2));
-    $$ = block;
-}
+stmt_list: 
+    %empty { 
+        $$ = new language::BlockStmt(); 
+    }
+    | stmt_list stmt {
+        language::BlockStmt* block = static_cast<language::BlockStmt*>($1);
+        block->add_statement(std::unique_ptr<language::IStatement>($2));
+        $$ = block;
+    }
 ;
 
 stmt: VAR '=' expr ';' {
