@@ -5,260 +5,112 @@
 #include <unordered_map>
 
 #include "node.hpp"
-// ================ Symbol table ============
+#include "interpritator.hpp"
 
-static std::unordered_map<std::string, int> variable_memory;
-
-static int get_variable_value(const std::string& name)
+void language::Number::evaluate(Interpreter& interp)
 {
-    if (variable_memory.find(name) == variable_memory.end())
-    {
-        variable_memory[name] = 0;
-    }
-    return variable_memory[name];
+    interp.eval_stack.PushValue(value_);
 }
 
-static void set_variable_value(const std::string& name, int value)
+void language::Variable::evaluate(Interpreter& interp)
 {
-    variable_memory[name] = value;
-}
-// ============ Number ============
-
-language::Number::Number(int value) : value_(value)
-{
+    interp.eval_stack.PushValue(interp.scope_stack.GetValueVariable(name_));
 }
 
-int language::Number::evaluate()
+void language::Declaration::evaluate(Interpreter& interp)
 {
-    return value_;
+    expr_->evaluate(interp);
+    interp.scope_stack.AddVariable(name_, interp.eval_stack.PopValue());
 }
 
-int language::Number::get_value() const
+void language::BinaryOp::evaluate(Interpreter& interp)
 {
-    return value_;
-}
+    left_expr_->evaluate(interp);
+    right_expr_->evaluate(interp);
 
-// ============ Variable ============
+    int right_val = interp.eval_stack.PopValue();
+    int left_val = interp.eval_stack.PopValue();
 
-language::Variable::Variable(const std::string& name) : name_(name)
-{
-}
-
-int language::Variable::evaluate()
-{
-    return get_variable_value(name_);
-}
-
-const std::string& language::Variable::get_name() const
-{
-    return name_;
-}
-
-// ============ BinaryOp ============
-
-language::BinaryOp::BinaryOp(Op op, std::unique_ptr<IExpression> left,
-                             std::unique_ptr<IExpression> right)
-    : op_(op), left_(std::move(left)), right_(std::move(right))
-{
-}
-
-int language::BinaryOp::evaluate()
-{
-    int left_val = left_->evaluate();
-    int right_val = right_->evaluate(); //FIXME - тут надо исправить, не всегда надо вычислять оба, если один уже тру тогда второй не надо
+    int res = 0;
 
     switch (op_)
     {
+    case Op::OR:
+        res = (left_val != 0) || (right_val != 0) ? 1 : 0; break;
+    case Op::AND:
+        res = (left_val != 0) && (right_val != 0) ? 1 : 0; break;
+    case Op::EQ:
+        res = (left_val == right_val) ? 1 : 0; break;
+    case Op::NE:
+        res = (left_val != right_val) ? 1 : 0; break;
+    case Op::L:
+        res = (left_val < right_val) ? 1 : 0; break;
+    case Op::G:
+        res = (left_val > right_val) ? 1 : 0; break;
+    case Op::LE:
+        res = (left_val <= right_val) ? 1 : 0; break;
+    case Op::GE:
+        res = (left_val >= right_val) ? 1 : 0; break;
     case Op::ADD:
-        return left_val + right_val;
+        res = left_val + right_val; break;
     case Op::SUB:
-        return left_val - right_val;
+        res = left_val - right_val; break;
     case Op::MUL:
-        return left_val * right_val;
+        res = left_val * right_val; break;
     case Op::DIV:
         if (right_val == 0)
-        {
             throw std::runtime_error("Division by zero!");
-        }
-        return left_val / right_val;
-
-    case Op::OR:
-        return (left_val != 0) || (right_val != 0) ? 1 : 0;
-    case Op::AND:
-        return (left_val != 0) && (right_val != 0) ? 1 : 0;
-
-    case Op::EQ:
-        return (left_val == right_val) ? 1 : 0;
-    case Op::NE:
-        return (left_val != right_val) ? 1 : 0;
-    case Op::L:
-        return (left_val < right_val) ? 1 : 0; // L = Less
-    case Op::G:
-        return (left_val > right_val) ? 1 : 0; // G = Greater
-    case Op::LE:
-        return (left_val <= right_val) ? 1 : 0; // LE = Less or Equal
-    case Op::GE:
-        return (left_val >= right_val) ? 1 : 0; // GE = Greater or Equal
-
+        res = left_val / right_val; break;
     default:
         throw std::runtime_error("Unknown binary operator");
     }
+
+    interp.eval_stack.PushValue(res);
 }
 
-language::BinaryOp::Op language::BinaryOp::get_op() const
+void language::Assignment::evaluate(Interpreter& interp)
 {
-    return op_;
+    expr_->evaluate(interp);
+    interp.scope_stack.WriteNewValueVar(name_, interp.eval_stack.PopValue());
 }
 
-const language::IExpression* language::BinaryOp::get_left() const
+void language::PrintStmt::evaluate(Interpreter& interp)
 {
-    return left_.get();
+    expr_->evaluate(interp);
+    std::cout << interp.eval_stack.PopValue() << '\n';
 }
 
-const language::IExpression* language::BinaryOp::get_right() const
-{
-    return right_.get();
-}
-
-// ============ Assignment ============
-
-language::Assignment::Assignment(const std::string& var_name,
-                                 std::unique_ptr<IExpression> expr)
-    : var_name_(var_name), expr_(std::move(expr))
-{
-}
-
-int language::Assignment::evaluate()
-{
-    int value = expr_->evaluate();
-    set_variable_value(var_name_, value);
-    return value;
-}
-
-const std::string& language::Assignment::get_var_name() const
-{
-    return var_name_;
-}
-
-const language::IExpression* language::Assignment::get_expr() const
-{
-    return expr_.get();
-}
-
-// ============ PrintStmt ============
-
-language::PrintStmt::PrintStmt(std::unique_ptr<IExpression> expr)
-    : expr_(std::move(expr))
-{
-}
-
-int language::PrintStmt::evaluate()
-{
-    int value = expr_->evaluate();
-    std::cout << value << std::endl;
-    return value;
-}
-
-const language::IExpression* language::PrintStmt::get_expr() const
-{
-    return expr_.get();
-}
-
-// ============ ScanfExpr ============
-language::ScanfExpr::ScanfExpr() = default;
-
-int language::ScanfExpr::evaluate()
+void language::ScanfExpr::evaluate(Interpreter& interp)
 {
     int value = 0;
     std::cin >> value;
+    interp.eval_stack.PushValue(value);
+}
 
-    if (std::cin.fail())
+void language::IfStmt::evaluate(Interpreter& interp)
+{
+    condition_->evaluate(interp);
+    if (interp.eval_stack.PopValue())
+        body_if_->evaluate(interp);
+    else if (body_else_)
+        body_else_->evaluate(interp);
+}
+
+void language::WhileStmt::evaluate(Interpreter& interp)
+{
+    while (interp.eval_stack.PopValue())
     {
-        std::cin.clear();
-
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        throw std::runtime_error("Invalid input for '?'");
+        condition_->evaluate(interp);
+        body_->evaluate(interp);
     }
-
-    return value;
 }
 
-// ============ IfStmt ============
-language::IfStmt::IfStmt(std::unique_ptr<IExpression> condition,
-                         std::unique_ptr<IStatement> then_branch,
-                         std::unique_ptr<IStatement> else_branch)
-    : condition_(std::move(condition)), then_branch_(std::move(then_branch)),
-      else_branch_(std::move(else_branch))
+void language::BlockStmt::evaluate(Interpreter& interp)
 {
-}
-
-int language::IfStmt::evaluate()
-{
-
-    if (condition_->evaluate() != 0)
+    interp.scope_stack.AddScope();
+    for (size_t i = 0; i < statements_.size(); ++i)
     {
-        return then_branch_->evaluate();
+        statements_[i]->evaluate(interp);
     }
-    else if (else_branch_)
-    {
-        return else_branch_->evaluate();
-    }
-    return 0;
-}
-
-const language::IExpression* language::IfStmt::get_condition() const
-{
-    return condition_.get();
-}
-
-const language::IStatement* language::IfStmt::get_then_branch() const
-{
-    return then_branch_.get();
-}
-
-const language::IStatement* language::IfStmt::get_else_branch() const
-{
-    return else_branch_.get();
-}
-
-// ============ WhileStmt ============
-language::WhileStmt::WhileStmt(std::unique_ptr<IExpression> condition,
-                               std::unique_ptr<IStatement> body)
-    : condition_(std::move(condition)), body_(std::move(body))
-{
-}
-
-int language::WhileStmt::evaluate()
-{
-    while (condition_->evaluate() != 0)
-    {
-        body_->evaluate();
-    }
-    return 0;
-}
-
-const language::IExpression* language::WhileStmt::get_condition() const
-{
-    return condition_.get();
-}
-
-const language::IStatement* language::WhileStmt::get_body() const
-{
-    return body_.get();
-}
-
-// ============ BlockStmt ============
-
-void language::BlockStmt::add_statement(std::unique_ptr<IStatement> stmt)
-{
-    statements_.push_back(std::move(stmt));
-}
-
-int language::BlockStmt::evaluate()
-{
-    for (auto& stmt : statements_)
-    {
-        stmt->evaluate();
-    }
-    return 0;
+    interp.scope_stack.DeleteScope();
 }

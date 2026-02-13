@@ -3,12 +3,13 @@
 
 namespace language
 {
+class Interpreter;
 
 class INode
 {
 public:
     virtual ~INode() = default;
-    virtual int evaluate() = 0;
+    virtual void evaluate(Interpreter& interp) = 0;
 };
 
 class IExpression : public INode
@@ -18,7 +19,6 @@ class IExpression : public INode
 class IStatement : public INode
 {
 };
-
 } // namespace language
 
 #endif // INODE_HPP

@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+// FIXME косяк с тем что тут не всегда виден interpreter
+
 namespace language
 {
 
@@ -15,9 +17,9 @@ private:
     int value_;
 
 public:
-    Number(int value);
-    int evaluate() override;
-    int get_value() const;
+    //Number(int value);
+    void evaluate(Interpreter& interp) override;
+    //int get_value() const;
 };
 
 class Variable : public IExpression
@@ -26,57 +28,43 @@ private:
     std::string name_;
 
 public:
-    Variable(const std::string& name);
-    int evaluate() override;
-    const std::string& get_name() const;
+    //Variable(const std::string& name);
+    void evaluate(Interpreter& interp) override;
+    //const std::string& get_name() const;
+};
+
+class Declaration : public IStatement
+{
+private:
+    std::string name_;
+    std::unique_ptr<IExpression> expr_;
+
+public:
+    void evaluate(Interpreter& interp) override;
 };
 
 class BinaryOp : public IExpression
 {
 public:
-    enum class Op
-    {
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        OR,
-        AND,
-        EQ,
-        NE,
-        L,
-        G,
-        LE,
-        GE
-    };
+    enum class Op { ADD, SUB, MUL, DIV, OR, AND, EQ, NE, L, G, LE, GE };
 
 private:
     Op op_;
-    std::unique_ptr<IExpression> left_;
-    std::unique_ptr<IExpression> right_;
+    std::unique_ptr<IExpression> left_expr_;
+    std::unique_ptr<IExpression> right_expr_;
 
 public:
-    BinaryOp(Op op, std::unique_ptr<IExpression> left,
-             std::unique_ptr<IExpression> right);
-    int evaluate() override;
-
-    Op get_op() const;
-    const IExpression* get_left() const;
-    const IExpression* get_right() const;
+    void evaluate(Interpreter& interp) override;
 };
 
 class Assignment : public IStatement
 {
 private:
-    std::string var_name_;
+    std::string name_;
     std::unique_ptr<IExpression> expr_;
 
 public:
-    Assignment(const std::string& var_name, std::unique_ptr<IExpression> expr);
-    int evaluate() override;
-
-    const std::string& get_var_name() const;
-    const IExpression* get_expr() const;
+    void evaluate(Interpreter& interp) override;
 };
 
 class PrintStmt : public IStatement
@@ -85,35 +73,24 @@ private:
     std::unique_ptr<IExpression> expr_;
 
 public:
-    PrintStmt(std::unique_ptr<IExpression> expr);
-    int evaluate() override;
-
-    const IExpression* get_expr() const;
+    void evaluate(Interpreter& interp) override;
 };
 
 class ScanfExpr : public IExpression
 {
 public:
-    ScanfExpr();
-    int evaluate() override;
+    void evaluate(Interpreter& interp) override;
 };
 
 class IfStmt : public IStatement
 {
 private:
     std::unique_ptr<IExpression> condition_;
-    std::unique_ptr<IStatement> then_branch_;
-    std::unique_ptr<IStatement> else_branch_; // nullptr если нет else
+    std::unique_ptr<IStatement> body_if_;
+    std::unique_ptr<IStatement> body_else_; // nullptr если нет else
 
 public:
-    IfStmt(std::unique_ptr<IExpression> condition,
-           std::unique_ptr<IStatement> then_branch,
-           std::unique_ptr<IStatement> else_branch = nullptr);
-    int evaluate() override;
-
-    const IExpression* get_condition() const;
-    const IStatement* get_then_branch() const;
-    const IStatement* get_else_branch() const;
+    void evaluate(Interpreter& interp) override;
 };
 
 class WhileStmt : public IStatement
@@ -123,34 +100,17 @@ private:
     std::unique_ptr<IStatement> body_;
 
 public:
-    WhileStmt(std::unique_ptr<IExpression> condition,
-              std::unique_ptr<IStatement> body);
-    int evaluate() override;
-
-    const IExpression* get_condition() const;
-    const IStatement* get_body() const;
+    void evaluate(Interpreter& interp) override;
 };
 
 class BlockStmt : public IStatement
 {
-public:
-    BlockStmt() = default;
-    int evaluate() override;
-    void add_statement(std::unique_ptr<IStatement> stmt);
-
-    size_t get_statement_count() const
-    {
-        return statements_.size();
-    }
-    const IStatement* get_statement(size_t i) const
-    {
-        return statements_[i].get();
-    }
-
 private:
     std::vector<std::unique_ptr<IStatement>> statements_;
-};
 
+public:
+    void evaluate(Interpreter& interp) override;
+};
 } // namespace language
 
 #endif // NODE_HPP

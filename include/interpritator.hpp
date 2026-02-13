@@ -1,41 +1,45 @@
-#pragma once
+#ifndef INTERPRITATOR_HPP
+#define INTERPRITATOR_HPP
 
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
+#include "node.hpp"
+
+namespace language
+{
+    using ValT = int;
+
 class VariableTable
 {
 private:
-    std::unordered_map<std::string, int> hash;
+    std::unordered_map<std::string, int> variables;
     using ItHash = std::unordered_map<std::string, int>::iterator;
 
 public:
-    bool IsSuchVariable(const std::string& name_variable) const
+    bool IsVariableExist(const std::string& name_variable) const
     {
-        return hash.find(name_variable) != hash.end();
+        return variables.find(name_variable) != variables.end();
     }
 
     bool AddNewVariable(const std::string& name_variable, int value)
     {
-        return hash.emplace(name_variable, value).second;
+        return variables.emplace(name_variable, value).second;
     }
 
-    bool RewriteOldVariable(const std::string& name_variable, int value)
+    bool Assign(const std::string& name_variable, int value)
     {
-        ItHash it = hash.find(name_variable);
-        if (it == hash.end()) { return false; }
+        ItHash it = variables.find(name_variable);
+        if (it == variables.end()) { return false; }
         it->second = value;
         return true;
-        // if (!IsSuchVariable(name_variable)) { return false; }
-        // hash.insert_or_assign(name_variable, value);
-        // return true;
     }
 
     int GetValue(const std::string& name) const
     {
-        return hash.at(name);
+        return variables.at(name);
     }
 };
 
@@ -68,7 +72,7 @@ public:
         for(size_t i = stack.size(); i > 0; --i)
         {
             VariableTable& current_table = stack[i - 1];
-            if (current_table.RewriteOldVariable(name_variable, value)) { return; }
+            if (current_table.Assign(name_variable, value)) { return; }
         }
         throw std::runtime_error("Variable not found: " + name_variable);
     }
@@ -78,7 +82,7 @@ public:
         for(size_t i = stack.size(); i > 0; --i)
         {
             const VariableTable& current_table = stack[i - 1];
-            if (current_table.IsSuchVariable(name_variable))
+            if (current_table.IsVariableExist(name_variable))
                 return current_table.GetValue(name_variable);
         }
         throw std::runtime_error("Variable not found: " + name_variable);
@@ -115,5 +119,12 @@ public:
 
 class Interpreter
 {
-    
+public:
+    ScopeStack scope_stack;
+    EvaluationStack eval_stack;
+
+    void Run(language::BlockStmt& root) { root.evaluate(*this); }
 };
+} // namespace language
+
+#endif // INTERPRITATOR_HPP
