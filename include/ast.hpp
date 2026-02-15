@@ -1,5 +1,5 @@
-#ifndef DRIVER_HPP
-#define DRIVER_HPP
+#ifndef AST_HPP
+#define AST_HPP
 
 #include "node.hpp"
 #include <memory>
@@ -8,13 +8,13 @@
 namespace language
 {
 
-class Driver
+class AST
 {
 private:
     std::unique_ptr<BlockStmt> root_;
 
 public:
-    Driver() : root_(std::make_unique<BlockStmt>())
+    AST() : root_(std::make_unique<BlockStmt>())
     {
     }
 
@@ -56,7 +56,6 @@ public:
         IExpression* expr = new Variable(*name);
         return expr;
     }
-
     IExpression* create_binary_op(BinaryOp::Op op, IExpression* left,
                                   IExpression* right)
     {
@@ -64,6 +63,10 @@ public:
                             std::unique_ptr<IExpression>(right));
     }
 
+    IExpression* create_unary(UnaryOp::Op op, IExpression* expr)
+    {
+        return new UnaryOp(op, std::unique_ptr<IExpression>(expr));
+    }
     IExpression* create_scanf()
     {
         return new ScanfExpr();
@@ -87,4 +90,4 @@ public:
 
 } // namespace language
 
-#endif // DRIVER_HPP
+#endif // AST_HPP

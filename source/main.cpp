@@ -1,9 +1,9 @@
-#include "driver.hpp"
+#include "ast.hpp"
 #include "node.hpp"
 #include <iostream>
 #include <string>
 
-extern int yyparse(language::Driver* driver);
+extern int yyparse(language::AST* driver);
 
 // ===== РЕКУРСИВНЫЙ ДАМП ДЕРЕВА (без изменения заголовков узлов) =====
 static void dump_node(const language::INode* node, int indent = 0)
@@ -121,15 +121,15 @@ static void dump_node(const language::INode* node, int indent = 0)
 
 int main()
 {
-    language::Driver driver;
+    language::AST ast;
 
     std::cout << "ParaCL Parser\n";
     std::cout << "Enter program (Ctrl+D to finish):\n\n";
 
-    if (yyparse(&driver) == 0)
+    if (yyparse(&ast) == 0)
     {
         std::cout << "\n=== AST DUMP (full hierarchy) ===\n";
-        dump_node(driver.get_root());
+        dump_node(ast.get_root());
         std::cout << "==================================\n";
         std::cout << "\n✓ AST built with correct parent-child relationships!\n";
     }

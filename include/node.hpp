@@ -17,9 +17,9 @@ private:
     int value_;
 
 public:
-    //Number(int value);
+    // Number(int value);
     void evaluate(Interpreter& interp) override;
-    //int get_value() const;
+    // int get_value() const;
 };
 
 class Variable : public IExpression
@@ -28,9 +28,9 @@ private:
     std::string name_;
 
 public:
-    //Variable(const std::string& name);
+    // Variable(const std::string& name);
     void evaluate(Interpreter& interp) override;
-    //const std::string& get_name() const;
+    // const std::string& get_name() const;
 };
 
 class Declaration : public IStatement
@@ -46,7 +46,21 @@ public:
 class BinaryOp : public IExpression
 {
 public:
-    enum class Op { ADD, SUB, MUL, DIV, OR, AND, EQ, NE, L, G, LE, GE };
+    enum class Op
+    {
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        OR,
+        AND,
+        EQ,
+        NE,
+        L,
+        G,
+        LE,
+        GE
+    };
 
 private:
     Op op_;
@@ -54,6 +68,24 @@ private:
     std::unique_ptr<IExpression> right_expr_;
 
 public:
+    void evaluate(Interpreter& interp) override;
+};
+
+class UnaryOp : public IExpression
+{
+public:
+    enum class Op
+    {
+        MINUS,
+        NOT
+    };
+
+private:
+    Op op_;
+    std::unique_ptr<IExpression> expr_;
+
+public:
+    UnaryOp(Op op, std::unique_ptr<IExpression> expr);
     void evaluate(Interpreter& interp) override;
 };
 

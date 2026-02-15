@@ -18,7 +18,7 @@ protected:
 
         FILE* old_yyin = yyin;
         yyin = tmp;
-        language::Driver driver;
+        language::AST driver;
         int result = yyparse(&driver);
         yyin = old_yyin;
         fclose(tmp);

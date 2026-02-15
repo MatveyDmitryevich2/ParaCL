@@ -1,16 +1,16 @@
 #ifndef INTERPRITATOR_HPP
 #define INTERPRITATOR_HPP
 
-#include <unordered_map>
-#include <string>
-#include <vector>
 #include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "node.hpp"
 
 namespace language
 {
-    using ValT = int;
+using ValT = int;
 
 class VariableTable
 {
@@ -32,7 +32,10 @@ public:
     bool Assign(const std::string& name_variable, int value)
     {
         ItHash it = variables.find(name_variable);
-        if (it == variables.end()) { return false; }
+        if (it == variables.end())
+        {
+            return false;
+        }
         it->second = value;
         return true;
     }
@@ -66,20 +69,22 @@ public:
             throw std::runtime_error("Variable redefinition: " + name_variable);
     }
 
-
     void WriteNewValueVar(const std::string& name_variable, int value)
     {
-        for(size_t i = stack.size(); i > 0; --i)
+        for (size_t i = stack.size(); i > 0; --i)
         {
             VariableTable& current_table = stack[i - 1];
-            if (current_table.Assign(name_variable, value)) { return; }
+            if (current_table.Assign(name_variable, value))
+            {
+                return;
+            }
         }
         throw std::runtime_error("Variable not found: " + name_variable);
     }
 
     int GetValueVariable(const std::string& name_variable) const
     {
-        for(size_t i = stack.size(); i > 0; --i)
+        for (size_t i = stack.size(); i > 0; --i)
         {
             const VariableTable& current_table = stack[i - 1];
             if (current_table.IsVariableExist(name_variable))
@@ -123,7 +128,10 @@ public:
     ScopeStack scope_stack;
     EvaluationStack eval_stack;
 
-    void Run(language::BlockStmt& root) { root.evaluate(*this); }
+    void Run(language::BlockStmt& root)
+    {
+        root.evaluate(*this);
+    }
 };
 } // namespace language
 

@@ -31,10 +31,10 @@
 [ \t\r\n]+      { /* Skip space and tabs*/ }
 
 
-"+"             {  return '+';  } // FIXME
-"-"             {  return '-';  }
-"*"             {  return '*';  }
-"/"             {  return '/';  }
+"+"             {  return PLUS;  }
+"-"             {  return MINUS;  }
+"*"             {  return MUL;  }
+"/"             {  return DIV;  }
 
 "("             {  return '(';  }
 ")"             {  return ')';  }
