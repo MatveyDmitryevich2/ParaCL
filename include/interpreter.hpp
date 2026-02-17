@@ -6,11 +6,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "node.hpp"
+#include "fwd.hpp"
 
 namespace language
 {
-using ValT = int;
+using ValT = int; // TODO
 
 class VariableTable
 {
@@ -128,10 +128,8 @@ public:
     ScopeStack scope_stack;
     EvaluationStack eval_stack;
 
-    void Run(language::BlockStmt& root)
-    {
-        root.evaluate(*this);
-    }
+    // void Run(language::BlockStmt& root);
+    void Run(BlockStmt& root);
 };
 } // namespace language
 

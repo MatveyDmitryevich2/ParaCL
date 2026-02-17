@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "interpritator.hpp"
+#include "interpreter.hpp"
 #include "node.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
@@ -19,14 +19,20 @@ void language::Variable::evaluate(Interpreter& interp)
 
 void language::Declaration::evaluate(Interpreter& interp)
 {
-    expr_->evaluate(interp);
-    interp.scope_stack.AddVariable(name_, interp.eval_stack.PopValue());
+    int value = 0;
+    if (expr_)
+    {
+        expr_->evaluate(interp);
+        value = interp.eval_stack.PopValue();
+    }
+
+    interp.scope_stack.AddVariable(name_, value);
 }
 
 void language::BinaryOp::evaluate(Interpreter& interp)
 {
-    left_expr_->evaluate(interp);
-    right_expr_->evaluate(interp);
+    left_->evaluate(interp);
+    right_->evaluate(interp);
 
     int right_val = interp.eval_stack.PopValue();
     int left_val = interp.eval_stack.PopValue();
@@ -102,7 +108,8 @@ void language::UnaryOp::evaluate(Interpreter& interp)
 void language::Assignment::evaluate(Interpreter& interp)
 {
     expr_->evaluate(interp);
-    interp.scope_stack.WriteNewValueVar(name_, interp.eval_stack.PopValue());
+    interp.scope_stack.WriteNewValueVar(var_name_,
+                                        interp.eval_stack.PopValue());
 }
 
 void language::PrintStmt::evaluate(Interpreter& interp)
@@ -127,7 +134,8 @@ void language::IfStmt::evaluate(Interpreter& interp)
         body_else_->evaluate(interp);
 }
 
-void language::WhileStmt::evaluate(Interpreter& interp)
+void language::WhileStmt::evaluate(
+    Interpreter& interp) // TODO проблема с логикой
 {
     while (interp.eval_stack.PopValue())
     {
@@ -144,4 +152,9 @@ void language::BlockStmt::evaluate(Interpreter& interp)
         statements_[i]->evaluate(interp);
     }
     interp.scope_stack.DeleteScope();
+}
+
+void language::Interpreter::Run(BlockStmt& root)
+{
+    root.evaluate(*this);
 }

@@ -1,27 +1,21 @@
 #include "ast.hpp"
+#include "interpreter.hpp"
 #include "node.hpp"
+#include "parser.tab.hpp" // ← для yy::parser
 #include <iostream>
 #include <string>
 
-extern int yyparse(language::AST* driver);
-
-// ===== РЕКУРСИВНЫЙ ДАМП ДЕРЕВА (без изменения заголовков узлов) =====
+// ===== РЕКУРСИВНЫЙ ДАМП ДЕРЕВА =====
 static void dump_node(const language::INode* node, int indent = 0)
 {
     if (!node)
         return;
-
     std::string prefix(indent, ' ');
 
-    // Expressions
     if (auto* n = dynamic_cast<const language::Number*>(node))
-    {
         std::cout << prefix << "Number(" << n->get_value() << ")\n";
-    }
     else if (auto* v = dynamic_cast<const language::Variable*>(node))
-    {
         std::cout << prefix << "Variable('" << v->get_name() << "')\n";
-    }
     else if (auto* op = dynamic_cast<const language::BinaryOp*>(node))
     {
         const char* sym = "?";
@@ -68,18 +62,35 @@ static void dump_node(const language::INode* node, int indent = 0)
         dump_node(op->get_left(), indent + 2);
         dump_node(op->get_right(), indent + 2);
     }
-    else if (dynamic_cast<const language::ScanfExpr*>(node))
+    else if (auto* u = dynamic_cast<const language::UnaryOp*>(node))
     {
-        std::cout << prefix << "ScanfExpr(?)\n";
+        const char* sym =
+            (u->get_op() == language::UnaryOp::Op::MINUS) ? "-" : "!";
+        std::cout << prefix << "UnaryOp(" << sym << ")\n";
+        dump_node(u->get_expr(), indent + 2);
     }
+    else if (dynamic_cast<const language::ScanfExpr*>(node))
+        std::cout << prefix << "ScanfExpr(?)\n";
 
-    // Statements
     else if (auto* a = dynamic_cast<const language::Assignment*>(node))
     {
         std::cout << prefix << "Assignment(var='" << a->get_var_name()
                   << "')\n";
         std::cout << prefix << "  expr:\n";
         dump_node(a->get_expr(), indent + 4);
+    }
+    else if (auto* d = dynamic_cast<const language::Declaration*>(node))
+    {
+        std::cout << prefix << "Declaration(var='" << d->get_var_name() << "')";
+        if (d->get_expr())
+        {
+            std::cout << "\n" << prefix << "  expr:\n";
+            dump_node(d->get_expr(), indent + 4);
+        }
+        else
+        {
+            std::cout << " (uninitialized)\n";
+        }
     }
     else if (auto* p = dynamic_cast<const language::PrintStmt*>(node))
     {
@@ -93,11 +104,11 @@ static void dump_node(const language::INode* node, int indent = 0)
         std::cout << prefix << "  condition:\n";
         dump_node(i->get_condition(), indent + 4);
         std::cout << prefix << "  then:\n";
-        dump_node(i->get_then_branch(), indent + 4);
-        if (i->get_else_branch())
+        dump_node(i->get_body_if(), indent + 4);
+        if (i->get_body_else())
         {
             std::cout << prefix << "  else:\n";
-            dump_node(i->get_else_branch(), indent + 4);
+            dump_node(i->get_body_else(), indent + 4);
         }
     }
     else if (auto* w = dynamic_cast<const language::WhileStmt*>(node))
@@ -113,29 +124,39 @@ static void dump_node(const language::INode* node, int indent = 0)
         std::cout << prefix << "BlockStmt [" << b->get_statement_count()
                   << " stmts]\n";
         for (size_t i = 0; i < b->get_statement_count(); ++i)
-        {
             dump_node(b->get_statement(i), indent + 2);
-        }
     }
 }
+#include "ast.hpp"
+#include "interpreter.hpp"
+#include "node.hpp"
+#include "parser.tab.hpp"
+#include <iostream>
+#include <string>
 
 int main()
 {
     language::AST ast;
 
-    std::cout << "ParaCL Parser\n";
-    std::cout << "Enter program (Ctrl+D to finish):\n\n";
+    yy::parser parser(&ast);
 
-    if (yyparse(&ast) == 0)
+    std::cerr << "Enter code (Ctrl+D when done):\n";
+    int result = parser.parse();
+
+    if (result == 0)
     {
-        std::cout << "\n=== AST DUMP (full hierarchy) ===\n";
-        dump_node(ast.get_root());
-        std::cout << "==================================\n";
-        std::cout << "\n✓ AST built with correct parent-child relationships!\n";
-    }
-    else
-    {
-        std::cerr << "\n✗ Parsing failed\n";
+
+        language::Interpreter interp;
+        interp.scope_stack.AddScope();
+
+        try
+        {
+
+            ast.get_root()->evaluate(interp);
+        }
+        catch (const std::exception& e)
+        {
+        }
     }
 
     return 0;

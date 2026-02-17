@@ -1,31 +1,42 @@
 #define _GNU_SOURCE 1
-#include "driver.hpp"
+#include "ast.hpp"
 #include "parser.tab.hpp"
 #include <gtest/gtest.h>
+#include <sstream>
 #include <stdio.h>
 #include <string>
 
-extern "C" FILE* yyin;
+extern yy::parser::semantic_type* yylval;
+extern yy::parser::location_type* yylloc;
+extern FILE* yyin;
+extern int yylineno;
 
 class ParserTest : public ::testing::Test
 {
 protected:
     bool parse(const std::string& code)
     {
+
         FILE* tmp = fmemopen((void*)code.c_str(), code.size(), "r");
         if (!tmp)
             return false;
 
         FILE* old_yyin = yyin;
         yyin = tmp;
+
+        yylineno = 1;
+
         language::AST driver;
-        int result = yyparse(&driver);
+        yy::parser parser(&driver);
+        int result = parser.parse();
+
         yyin = old_yyin;
         fclose(tmp);
 
         return result == 0;
     }
 };
+
 // ------------------------------------------------------------
 // 1. Basic tests
 // ------------------------------------------------------------
@@ -167,22 +178,22 @@ TEST_F(ParserTest, NestedBlocks)
     EXPECT_TRUE(parse("{ { x = 5; } { y = 10; } }"));
 }
 
-// TEST_F(ParserTest, ComplexProgram_WithLogic)
-//{
-//     EXPECT_TRUE(parse(R"(
-//         i = 0;
-//         sum = 0;
-//         while (i < 10 && !(i == 7)) {
-//             sum = sum + i * 2;
-//             if (sum >= 20 || i == 5) {
-//                 print (sum);
-//             }
-//             i = i + 1;
-//         }
-//         print (i);
-//         print (sum);
-//     )"));
-// }
+TEST_F(ParserTest, ComplexProgram_WithLogic)
+{
+    EXPECT_TRUE(parse(R"(
+         i = 0;
+         sum = 0;
+         while (i < 10 && !(i == 7)) {
+             sum = sum + i * 2;
+             if (sum >= 20 || i == 5) {
+                 print (sum);
+             }
+             i = i + 1;
+         }
+         print (i);
+         print (sum);
+     )"));
+}
 //  ------------------------------------------------------------
 //  5. Scanf
 //  ------------------------------------------------------------
