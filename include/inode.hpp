@@ -5,6 +5,7 @@
 
 namespace language
 {
+class Interpreter;
 
 class INode
 {
@@ -20,7 +21,6 @@ class IExpression : public INode
 class IStatement : public INode
 {
 };
-
 } // namespace language
 
 #endif // INODE_HPP

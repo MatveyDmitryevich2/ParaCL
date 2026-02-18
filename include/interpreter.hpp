@@ -12,6 +12,12 @@ namespace language
 {
 using ValT = int; // TODO
 
+#include "node.hpp"
+
+namespace language
+{
+    using ValT = int;
+
 class VariableTable
 {
 private:

@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+// FIXME косяк с тем что тут не всегда виден interpreter
+
 namespace language
 {
 
@@ -47,21 +49,7 @@ public:
 class BinaryOp : public IExpression
 {
 public:
-    enum class Op
-    {
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        OR,
-        AND,
-        EQ,
-        NE,
-        L,
-        G,
-        LE,
-        GE
-    };
+    enum class Op { ADD, SUB, MUL, DIV, OR, AND, EQ, NE, L, G, LE, GE };
 
 private:
     Op op_;
@@ -265,6 +253,9 @@ public:
     ~BlockStmt() = default;
 };
 
+public:
+    void evaluate(Interpreter& interp) override;
+};
 } // namespace language
 
 #endif // NODE_HPP
