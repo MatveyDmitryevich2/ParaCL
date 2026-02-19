@@ -1,6 +1,6 @@
 %language "c++"
 %defines
-%define api.value.type union
+%define api.value.type variant
 %define api.parser.class {parser}
 %define parse.error detailed
 %locations
@@ -16,14 +16,13 @@
 
 %code {
     #include <iostream>
-    #include "parser.tab.hpp"
 
     int yylex(yy::parser::semantic_type* yylval,
               yy::parser::location_type* yylloc,
               language::AST* ast);
 }
 
-%token INT WHILE IF PRINT SCANF ELSE
+%token WHILE IF PRINT SCANF ELSE
 %token EQ NE LE GE L G AND OR NOT
 %token PLUS MINUS MUL DIV
 %token UMINUS
@@ -34,7 +33,8 @@
 %type <language::IExpression*> expr
 %type <language::IStatement*> stmt
 %type <language::BlockStmt*> stmt_list
-%type <language::IStatement*> opt_else
+%type <language::BlockStmt*> stmt_body
+%type <language::BlockStmt*> opt_else
 
 %nonassoc XIF
 %nonassoc ELSE
@@ -50,7 +50,7 @@
 
 program: stmt_list {
     ast->set_root($1);
-    std::cout << "✓ Parsing completed successfully\n";
+    //std::cout << "✓ Parsing completed successfully\n";
 }
 ;
 
@@ -64,34 +64,30 @@ stmt_list:
     }
 ;
 
+stmt_body:
+    '{' stmt_list '}' {
+        $$ = $2;
+    }
+    | stmt {
+        $$ = ast->create_block();
+        $$->add_statement($1);
+    }
+;
+
 stmt:
-    INT VAR '=' expr ';' {
-        std::string name = *$2;
-
-        $$ = ast->create_declaration(name, $4);
-    }
-    | INT VAR ';' {
-        std::string name = *$2;
-
-        $$ = ast->create_declaration(name, nullptr);
-    }
     | VAR '=' expr ';' {
         std::string name = *$1;
 
         $$ = ast->create_assignment(name, $3);
     }
-    | PRINT '(' expr ')' ';' {
-        $$ = ast->create_print($3);
+    | PRINT expr ';' {
+        $$ = ast->create_print($2);
     }
-    | WHILE '(' expr ')' stmt {
-        auto body_block = ast->create_block();
-        body_block->add_statement($5);
-        $$ = ast->create_while($3, body_block);
+    | WHILE '(' expr ')' stmt_body {
+        $$ = ast->create_while($3, $5);
     }
-    | IF '(' expr ')' stmt opt_else {
-        auto then_block = ast->create_block();
-        then_block->add_statement($5);
-        $$ = ast->create_if($3, then_block, $6);
+    | IF '(' expr ')' stmt_body opt_else {
+        $$ = ast->create_if($3, $5, $6);
     }
     | '{' stmt_list '}' {
         $$ = $2;
@@ -99,7 +95,7 @@ stmt:
 ;
 
 opt_else:
-    ELSE stmt { $$ = $2; }
+    ELSE stmt_body { $$ = $2; }
     | %prec XIF %empty { $$ = nullptr; }
 ;
 

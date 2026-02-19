@@ -17,18 +17,6 @@ void language::Variable::evaluate(Interpreter& interp)
     interp.eval_stack.PushValue(interp.scope_stack.GetValueVariable(name_));
 }
 
-void language::Declaration::evaluate(Interpreter& interp)
-{
-    int value = 0;
-    if (expr_)
-    {
-        expr_->evaluate(interp);
-        value = interp.eval_stack.PopValue();
-    }
-
-    interp.scope_stack.AddVariable(name_, value);
-}
-
 void language::BinaryOp::evaluate(Interpreter& interp)
 {
     left_->evaluate(interp);
@@ -108,7 +96,7 @@ void language::UnaryOp::evaluate(Interpreter& interp)
 void language::Assignment::evaluate(Interpreter& interp)
 {
     expr_->evaluate(interp);
-    interp.scope_stack.WriteNewValueVar(var_name_,
+    interp.scope_stack.AssignOrDeclareCurrent(var_name_,
                                         interp.eval_stack.PopValue());
 }
 
@@ -134,15 +122,20 @@ void language::IfStmt::evaluate(Interpreter& interp)
         body_else_->evaluate(interp);
 }
 
-void language::WhileStmt::evaluate(
-    Interpreter& interp) // TODO проблема с логикой
+void language::WhileStmt::evaluate(Interpreter& interp)
 {
-    while (interp.eval_stack.PopValue())
+    while (true)
     {
         condition_->evaluate(interp);
+        const int cond = interp.eval_stack.PopValue();
+
+        if (!cond)
+            break;
+
         body_->evaluate(interp);
     }
 }
+
 
 void language::BlockStmt::evaluate(Interpreter& interp)
 {

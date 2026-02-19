@@ -63,12 +63,6 @@ public:
         return make_node<Assignment>(var_name, expr);
     }
 
-    IStatement* create_declaration(const std::string& var_name,
-                                   IExpression* expr = nullptr)
-    {
-        return make_node<Declaration>(var_name, expr);
-    }
-
     IStatement* create_print(IExpression* expr)
     {
         return make_node<PrintStmt>(expr);

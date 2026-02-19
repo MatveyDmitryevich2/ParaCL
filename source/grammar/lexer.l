@@ -16,39 +16,38 @@ extern language::AST* ast_ptr;
 %%
 
 [0-9]+ {
-    yylval->NUMBER = std::stoi(yytext);
+    yylval->emplace<int>(std::stoi(yytext));
     return yy::parser::token::NUMBER;
 }
 
-"int"     { return yy::parser::token::INT; }
 "while"   { return yy::parser::token::WHILE; }
-"if"      { return yy::parser::token::IF; }
+"if"      { return yy::parser::token::IF;    }
 "print"   { return yy::parser::token::PRINT; }
 "?"       { return yy::parser::token::SCANF; }
-"else"    { return yy::parser::token::ELSE; }
+"else"    { return yy::parser::token::ELSE;  }
 
 [a-zA-Z_][a-zA-Z0-9_]* {
-    yylval->VAR = ast_ptr->make_string(yytext);
+    yylval->emplace<std::string*>(ast_ptr->make_string(yytext));
     return yy::parser::token::VAR;
 }
 
 [ \t\r\n]+ { /* игнорируем пробелы */ }
 
-"+"  { return yy::parser::token::PLUS; }
+"+"  { return yy::parser::token::PLUS;  }
 "-"  { return yy::parser::token::MINUS; }
-"*"  { return yy::parser::token::MUL; }
-"/"  { return yy::parser::token::DIV; }
+"*"  { return yy::parser::token::MUL;   }
+"/"  { return yy::parser::token::DIV;   }
 
-"==" { return yy::parser::token::EQ; }
-"!=" { return yy::parser::token::NE; }
-"<=" { return yy::parser::token::LE; }
-">=" { return yy::parser::token::GE; }
-"<"  { return yy::parser::token::L; }
-">"  { return yy::parser::token::G; }
+"==" { return yy::parser::token::EQ;    }
+"!=" { return yy::parser::token::NE;    }
+"<=" { return yy::parser::token::LE;    }
+">=" { return yy::parser::token::GE;    }
+"<"  { return yy::parser::token::L;     }
+">"  { return yy::parser::token::G;     }
 
-"&&" { return yy::parser::token::AND; }
-"||" { return yy::parser::token::OR; }
-"!"  { return yy::parser::token::NOT; }
+"&&" { return yy::parser::token::AND;   }
+"||" { return yy::parser::token::OR;    }
+"!"  { return yy::parser::token::NOT;   }
 
 "("  { return '('; }
 ")"  { return ')'; }
