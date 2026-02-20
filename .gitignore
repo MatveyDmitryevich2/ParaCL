@@ -4,3 +4,5 @@ build/
 *.png
 *.pdf
 *.svg
+*.txt
+*.pcl

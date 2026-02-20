@@ -97,7 +97,7 @@ void language::Assignment::evaluate(Interpreter& interp)
 {
     expr_->evaluate(interp);
     interp.scope_stack.AssignOrDeclareCurrent(var_name_,
-                                        interp.eval_stack.PopValue());
+                                              interp.eval_stack.PopValue());
 }
 
 void language::PrintStmt::evaluate(Interpreter& interp)
@@ -135,7 +135,6 @@ void language::WhileStmt::evaluate(Interpreter& interp)
         body_->evaluate(interp);
     }
 }
-
 
 void language::BlockStmt::evaluate(Interpreter& interp)
 {

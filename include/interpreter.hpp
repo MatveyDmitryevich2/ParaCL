@@ -60,7 +60,8 @@ public:
 
     void DeleteScope()
     {
-        if (stack.empty()) throw std::runtime_error("DeleteScope on empty stack");
+        if (stack.empty())
+            throw std::runtime_error("DeleteScope on empty stack");
         stack.pop_back();
     }
 
@@ -82,7 +83,8 @@ public:
             }
         }
         if (stack.empty())
-            throw std::runtime_error("No scopes available for variable: " + name_variable);
+            throw std::runtime_error("No scopes available for variable: " +
+                                     name_variable);
 
         stack.back().AddNewVariable(name_variable, value);
     }

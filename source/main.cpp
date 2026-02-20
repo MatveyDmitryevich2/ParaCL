@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
     if (parser.parse() != 0)
     {
-        std::cerr << "Parse error\n";
+        std::cerr << "Parser ERROR \n";
         std::fclose(yyin);
         return 0;
     }

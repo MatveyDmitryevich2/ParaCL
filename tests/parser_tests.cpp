@@ -214,25 +214,25 @@ TEST_F(ParserTest, InputInExpression)
 
 TEST_F(ParserTest, MissingSemicolon)
 {
-    EXPECT_FALSE(parse("x = 5")); // Нет ;
+    EXPECT_FALSE(parse("x = 5"));
 }
 
 TEST_F(ParserTest, UnclosedParenthesis)
 {
-    EXPECT_FALSE(parse("print (2 + 3;")); // Нет )
+    EXPECT_FALSE(parse("print (2 + 3;"));
 }
 
 TEST_F(ParserTest, UnclosedBlock)
 {
-    EXPECT_FALSE(parse("{ x = 5;")); // Нет }
+    EXPECT_FALSE(parse("{ x = 5;"));
 }
 
 TEST_F(ParserTest, UnknownToken)
 {
-    EXPECT_FALSE(parse("x = @;")); // Неизвестный символ @
+    EXPECT_FALSE(parse("x = @;"));
 }
 
 TEST_F(ParserTest, InvalidSyntax)
 {
-    EXPECT_FALSE(parse("x = ;")); // Нет выражения после =
+    EXPECT_FALSE(parse("x = ;"));
 }

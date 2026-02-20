@@ -11,10 +11,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror=return-type)
 endif()
 
-# ========== ПУТИ ==========
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
 # ========== FLEX & BISON ==========
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
@@ -25,14 +25,13 @@ bison_target(parser
     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.hpp
 )
 
-# Генерация лексера (без C++ опций)
 flex_target(scanner
     ${SOURCE_DIR}/grammar/lexer.l
     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
 )
 
 add_flex_bison_dependency(scanner parser)
-# ========== ЯДРО ==========
+
 set(PARA_CORE_SOURCES
     ${SOURCE_DIR}/node.cpp
     ${BISON_parser_OUTPUTS}
@@ -48,7 +47,6 @@ target_include_directories(paracl_core PUBLIC
 )
 
 
-# ========== ИНТЕРПРЕТАТОР ==========
 add_executable(paracl
     ${SOURCE_DIR}/main.cpp
     $<TARGET_OBJECTS:paracl_core>
@@ -65,7 +63,7 @@ set_target_properties(paracl PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-# ========== ТЕСТЫ ==========
+
 find_package(GTest QUIET)
 
 if(GTest_FOUND)
@@ -86,9 +84,27 @@ if(GTest_FOUND)
     )
 
     add_test(NAME paracl_unit_tests COMMAND paracl_tests)
+
+     add_executable(paracl_interpreter_tests
+        ${TESTS_DIR}/interpreter_tests.cpp
+        $<TARGET_OBJECTS:paracl_core>
+    )
+
+    target_include_directories(paracl_interpreter_tests PRIVATE
+        ${INCLUDE_DIR}
+        ${SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
+    target_link_libraries(paracl_interpreter_tests PRIVATE
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    add_test(NAME interpreter_tests COMMAND paracl_interpreter_tests)
 endif()
 
-# ========== ЦЕЛИ ==========
+
 add_custom_target(run
     COMMAND ${CMAKE_BINARY_DIR}/bin/ParaCL
     DEPENDS paracl

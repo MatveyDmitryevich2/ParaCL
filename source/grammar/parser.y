@@ -50,7 +50,6 @@
 
 program: stmt_list {
     ast->set_root($1);
-    //std::cout << "✓ Parsing completed successfully\n";
 }
 ;
 
@@ -75,7 +74,7 @@ stmt_body:
 ;
 
 stmt:
-    | VAR '=' expr ';' {
+    VAR '=' expr ';' {
         std::string name = *$1;
 
         $$ = ast->create_assignment(name, $3);

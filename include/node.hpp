@@ -3,10 +3,10 @@
 
 #include "fwd.hpp"
 #include "inode.hpp"
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
-#include <cstddef>
 
 namespace language
 {
@@ -48,7 +48,21 @@ public:
 class BinaryOp : public IExpression
 {
 public:
-    enum class Op { ADD, SUB, MUL, DIV, OR, AND, EQ, NE, L, G, LE, GE };
+    enum class Op
+    {
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        OR,
+        AND,
+        EQ,
+        NE,
+        L,
+        G,
+        LE,
+        GE
+    };
 
 private:
     Op op_;

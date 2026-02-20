@@ -31,7 +31,7 @@ extern language::AST* ast_ptr;
     return yy::parser::token::VAR;
 }
 
-[ \t\r\n]+ { /* игнорируем пробелы */ }
+[ \t\r\n]+ { /* for ignoring \n */ }
 
 "+"  { return yy::parser::token::PLUS;  }
 "-"  { return yy::parser::token::MINUS; }
