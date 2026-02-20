@@ -1,8 +1,9 @@
 build/
 .vscode/
 *.dot
-*.png
 *.pdf
 *.svg
 *.txt
 *.pcl
+*.png
+!images/*.png
