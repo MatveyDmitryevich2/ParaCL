@@ -120,7 +120,7 @@ public:
     ~UnaryOp() = default;
 };
 
-class Assignment : public IStatement
+class Assignment : public IExpression
 {
 private:
     std::string var_name_;
@@ -141,6 +141,24 @@ public:
         return expr_;
     }
     ~Assignment() = default;
+};
+class ExpressionStmt : public IStatement
+{
+private:
+    IExpression* expr_;
+
+public:
+    ExpressionStmt(IExpression* expr) : expr_(expr)
+    {
+    }
+
+    void evaluate(Interpreter& interp) override;
+
+    IExpression* get_expr() const
+    {
+        return expr_;
+    }
+    ~ExpressionStmt() = default;
 };
 
 class PrintStmt : public IStatement

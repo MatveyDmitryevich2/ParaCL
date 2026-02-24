@@ -57,10 +57,14 @@ public:
         return make_node<ScanfExpr>();
     }
 
-    IStatement* create_assignment(const std::string& var_name,
-                                  IExpression* expr)
+    IExpression* create_assignment(const std::string& var_name,
+                                   IExpression* expr)
     {
         return make_node<Assignment>(var_name, expr);
+    }
+    IStatement* create_expression_stmt(IExpression* expr)
+    {
+        return make_node<ExpressionStmt>(expr);
     }
 
     IStatement* create_print(IExpression* expr)

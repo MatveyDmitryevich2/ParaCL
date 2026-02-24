@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 
+
 extern yy::parser::semantic_type* yylval;
 extern yy::parser::location_type* yylloc;
 extern language::AST* ast_ptr;
@@ -53,7 +54,7 @@ extern language::AST* ast_ptr;
 ")"  { return ')'; }
 "{"  { return '{'; }
 "}"  { return '}'; }
-"="  { return '='; }
+"="  { return yy::parser::token::EQUALS; }
 ";"  { return ';'; }
 
 . {

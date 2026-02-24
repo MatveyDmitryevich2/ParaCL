@@ -10,27 +10,33 @@
 %code requires {
     #include <string>
     #include <memory>
+    #include <iostream>
     #include "ast.hpp"
     #include "node.hpp"
 }
 
 %code {
     #include <iostream>
-
     int yylex(yy::parser::semantic_type* yylval,
               yy::parser::location_type* yylloc,
               language::AST* ast);
+
 }
+
+%debug
 
 %token WHILE IF PRINT SCANF ELSE
 %token EQ NE LE GE L G AND OR NOT
 %token PLUS MINUS MUL DIV
 %token UMINUS
+%token EQUALS
 
 %token <int> NUMBER
 %token <std::string*> VAR
 
 %type <language::IExpression*> expr
+%type <language::IExpression*> unary_expr
+%type <language::IExpression*> primary_expr
 %type <language::IStatement*> stmt
 %type <language::BlockStmt*> stmt_list
 %type <language::BlockStmt*> stmt_body
@@ -38,7 +44,9 @@
 
 %nonassoc XIF
 %nonassoc ELSE
+
 %right NOT UMINUS
+%right EQUALS
 %left OR
 %left AND
 %left EQ NE
@@ -49,6 +57,7 @@
 %%
 
 program: stmt_list {
+
     ast->set_root($1);
 }
 ;
@@ -74,12 +83,13 @@ stmt_body:
 ;
 
 stmt:
-    VAR '=' expr ';' {
+ VAR EQUALS expr ';'  {
         std::string name = *$1;
-
-        $$ = ast->create_assignment(name, $3);
+        auto* assign = ast->create_assignment(name, $3);
+        $$ = ast->create_expression_stmt(assign);
     }
-    | PRINT expr ';' {
+    |
+    PRINT expr ';' {
         $$ = ast->create_print($2);
     }
     | WHILE '(' expr ')' stmt_body {
@@ -98,14 +108,45 @@ opt_else:
     | %prec XIF %empty { $$ = nullptr; }
 ;
 
-expr:
-    MINUS expr %prec UMINUS {
-        $$ = ast->create_unary(language::UnaryOp::Op::MINUS, $2);
+
+primary_expr:
+    NUMBER {
+        $$ = ast->create_number($1);
     }
-    | NOT expr {
+    | VAR {
+        std::string name = *$1;
+        $$ = ast->create_variable(name);
+    }
+    | SCANF {
+        $$ = ast->create_scanf();
+    }
+    | '(' VAR EQUALS expr ')' {
+        std::string name = *$2;
+        $$ = ast->create_assignment(name, $4);
+    }
+    | '(' expr ')' {
+        $$ = $2;
+    }
+
+;
+
+unary_expr :
+    primary_expr
+  | MINUS unary_expr %prec UMINUS {
+        $$ = ast->create_binary_op(
+            language::BinaryOp::Op::SUB,
+            ast->create_number(0),
+            $2
+        );
+    }
+    | NOT unary_expr %prec UMINUS {
         $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
     }
-    | expr OR expr {
+
+
+;
+expr:
+     expr OR expr {
         $$ = ast->create_binary_op(language::BinaryOp::Op::OR, $1, $3);
     }
     | expr AND expr {
@@ -141,19 +182,12 @@ expr:
     | expr DIV expr {
         $$ = ast->create_binary_op(language::BinaryOp::Op::DIV, $1, $3);
     }
-    | '(' expr ')' {
-        $$ = $2;
-    }
-    | NUMBER {
-        $$ = ast->create_number($1);
-    }
-    | VAR {
+    | VAR EQUALS expr %prec EQUALS {
         std::string name = *$1;
-        $$ = ast->create_variable(name);
+        $$ = ast->create_assignment(name, $3);
     }
-    | SCANF {
-        $$ = ast->create_scanf();
-    }
+
+    | unary_expr
 ;
 
 %%

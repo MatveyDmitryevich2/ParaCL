@@ -21,7 +21,6 @@ void language::BinaryOp::evaluate(Interpreter& interp)
 {
     left_->evaluate(interp);
     right_->evaluate(interp);
-
     int right_val = interp.eval_stack.PopValue();
     int left_val = interp.eval_stack.PopValue();
 
@@ -63,10 +62,14 @@ void language::BinaryOp::evaluate(Interpreter& interp)
         res = left_val * right_val;
         break;
     case Op::DIV:
+
         if (right_val == 0)
+        {
             throw std::runtime_error("Division by zero!");
+        }
         res = left_val / right_val;
         break;
+
     default:
         throw std::runtime_error("Unknown binary operator");
     }
@@ -96,8 +99,20 @@ void language::UnaryOp::evaluate(Interpreter& interp)
 void language::Assignment::evaluate(Interpreter& interp)
 {
     expr_->evaluate(interp);
-    interp.scope_stack.AssignOrDeclareCurrent(var_name_,
-                                              interp.eval_stack.PopValue());
+    int value = interp.eval_stack.PopValue();
+
+    interp.scope_stack.AssignOrDeclareCurrent(var_name_, value);
+
+    interp.eval_stack.PushValue(value);
+}
+
+void language::ExpressionStmt::evaluate(Interpreter& interp)
+{
+    expr_->evaluate(interp);
+    if (!interp.eval_stack.IsEmpty())
+    {
+        interp.eval_stack.PopValue();
+    }
 }
 
 void language::PrintStmt::evaluate(Interpreter& interp)

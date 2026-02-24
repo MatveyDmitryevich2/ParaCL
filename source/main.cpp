@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
     if (parser.parse() != 0)
     {
-        std::cerr << "Parser ERROR \n";
+
         std::fclose(yyin);
         return 0;
     }
@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 
     try
     {
+
         interp.Run(*ast.get_root());
     }
     catch (const std::exception& e)

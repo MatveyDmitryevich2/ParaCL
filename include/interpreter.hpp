@@ -64,7 +64,10 @@ public:
             throw std::runtime_error("DeleteScope on empty stack");
         stack.pop_back();
     }
-
+    bool IsEmpty() const
+    {
+        return stack.empty();
+    }
     void AddVariable(const std::string& name_variable, int value)
     {
         VariableTable& top = stack.back();
@@ -114,6 +117,11 @@ public:
         int top_value = stack.back();
         stack.pop_back();
         return top_value;
+    }
+
+    bool IsEmpty() const
+    {
+        return stack.empty();
     }
 
     void PushValue(int value)
