@@ -124,7 +124,13 @@ void language::PrintStmt::evaluate(Interpreter& interp)
 void language::ScanfExpr::evaluate(Interpreter& interp)
 {
     int value = 0;
-    std::cin >> value;
+
+    // Читаем из потока интерпретатора
+    if (fscanf(interp.getInputStream(), "%d", &value) != 1)
+    {
+        throw std::runtime_error("Failed to read input");
+    }
+
     interp.eval_stack.PushValue(value);
 }
 

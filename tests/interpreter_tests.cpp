@@ -62,6 +62,50 @@ protected:
         return testing::internal::GetCapturedStdout();
     }
 
+    std::string runWithInput(const std::string& code, const std::string& input)
+    {
+
+        FILE* code_file = fmemopen((void*)code.c_str(), code.size(), "r");
+        FILE* saved_yyin = yyin;
+
+        yyin = code_file;
+        yylineno = 1;
+
+        language::AST ast;
+        yy::parser parser(&ast);
+        if (parser.parse() != 0)
+        {
+            fclose(code_file);
+            yyin = saved_yyin;
+            return "";
+        }
+        fclose(code_file);
+
+        FILE* input_file = fmemopen((void*)input.c_str(), input.size(), "r");
+
+        testing::internal::CaptureStdout();
+
+        try
+        {
+            language::Interpreter interp(input_file);
+            interp.Run(*ast.get_root());
+        }
+        catch (...)
+        {
+            fclose(input_file);
+            yyin = saved_yyin;
+            testing::internal::GetCapturedStdout();
+            throw;
+        }
+
+        std::string output = testing::internal::GetCapturedStdout();
+
+        fclose(input_file);
+        yyin = saved_yyin;
+
+        return output;
+    }
+
     int getVarValue(const std::string& code, const std::string& var)
     {
         FILE* tmp = fmemopen((void*)code.c_str(), code.size(), "r");
@@ -78,6 +122,7 @@ protected:
         return interp.scope_stack.GetValueVariable(var);
     }
 };
+
 // ------------------------------------------------------------
 //  Arithmetic tests
 // ------------------------------------------------------------
@@ -225,6 +270,11 @@ TEST_F(InterpreterTest, EmptyBlocks)
     EXPECT_EQ(run("{ } print 1;"), "1\n");
 }
 
+TEST_F(InterpreterTest, EmptySemicolon)
+{
+    EXPECT_EQ(run("; print(1);"), "1\n");
+}
+
 TEST_F(InterpreterTest, ZeroAndNegative)
 {
     EXPECT_EQ(run("x = 0; if (!x) { print 1; }"), "1\n");
@@ -240,6 +290,40 @@ TEST_F(InterpreterTest, WhileLoop)
     EXPECT_EQ(run("i = 0; while (i < 3) { print i ; i = i + 1; }"),
               "0\n1\n2\n");
 }
+
+// ------------------------------------------------------------
+//  Scanf tests
+// ------------------------------------------------------------
+TEST_F(InterpreterTest, Scanf_Basic)
+{
+    std::string code = "x = ?; print x;";
+    std::string input = "42\n";
+
+    EXPECT_EQ(runWithInput(code, input), "42\n");
+}
+
+TEST_F(InterpreterTest, Scanf_Multiple)
+{
+    std::string code = "x = ?; y = ?; print x + y;";
+    std::string input = "10\n20\n";
+
+    EXPECT_EQ(runWithInput(code, input), "30\n");
+}
+
+TEST_F(InterpreterTest, WhileScanf_StopOnZero)
+{
+    std::string code = R"(
+        count = 0;
+        while (x = ?) {
+            count = count + 1;
+        }
+        print count;
+    )";
+    std::string input = "5\n3\n1\n0\n";
+
+    EXPECT_EQ(runWithInput(code, input), "3\n");
+}
+
 // ------------------------------------------------------------
 //  Error tests
 // ------------------------------------------------------------
@@ -252,4 +336,28 @@ TEST_F(InterpreterTest, DivisionByZero)
 TEST_F(InterpreterTest, UndefinedVariable_Throws)
 {
     EXPECT_THROW(run("print(unknown);"), std::runtime_error);
+}
+
+// ------------------------------------------------------------
+//  Comments tests
+// ------------------------------------------------------------
+TEST_F(InterpreterTest, Comments_SingleLine)
+{
+    EXPECT_EQ(run("// this is comment\nprint 5;"), "5\n");
+    EXPECT_EQ(run("print 5; // inline comment"), "5\n");
+}
+
+TEST_F(InterpreterTest, Comments_MultipleLines)
+{
+    EXPECT_EQ(run("// line 1\n// line 2\nprint 4;"), "4\n");
+}
+
+TEST_F(InterpreterTest, Comments_InCode)
+{
+    EXPECT_EQ(run("x = 5; // set x\ny = x + 1; // calc y\nprint y;"), "6\n");
+}
+
+TEST_F(InterpreterTest, Comments_Empty)
+{
+    EXPECT_EQ(run("//\nprint 1;"), "1\n");
 }

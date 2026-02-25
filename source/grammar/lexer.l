@@ -32,7 +32,9 @@ extern language::AST* ast_ptr;
     return yy::parser::token::VAR;
 }
 
-[ \t\r\n]+ { /* for ignoring \n */ }
+[ \t\r]+        { /* skips space*/ }
+\n              { yylineno++; }
+"//"[^\n]*      { /* ignore comments*/ }
 
 "+"  { return yy::parser::token::PLUS;  }
 "-"  { return yy::parser::token::MINUS; }
@@ -56,7 +58,6 @@ extern language::AST* ast_ptr;
 "}"  { return '}'; }
 "="  { return yy::parser::token::EQUALS; }
 ";"  { return ';'; }
-
 . {
     std::cerr << "Unexpected character: " << yytext[0] << std::endl;
     return yytext[0];

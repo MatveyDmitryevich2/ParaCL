@@ -83,7 +83,11 @@ stmt_body:
 ;
 
 stmt:
- VAR EQUALS expr ';'  {
+    ';' {
+        $$ = ast->create_block();
+    }
+    |
+    VAR EQUALS expr ';'  {
         std::string name = *$1;
         auto* assign = ast->create_assignment(name, $3);
         $$ = ast->create_expression_stmt(assign);
@@ -98,6 +102,7 @@ stmt:
     | IF '(' expr ')' stmt_body opt_else {
         $$ = ast->create_if($3, $5, $6);
     }
+
     | '{' stmt_list '}' {
         $$ = $2;
     }

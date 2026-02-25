@@ -139,13 +139,26 @@ public:
 
 class Interpreter
 {
+private:
+    FILE* input_stream_; // ← Поток для ввода (?)
+
 public:
+    // Конструктор (по умолчанию stdin)
+    Interpreter(FILE* input = stdin) : input_stream_(input)
+    {
+    }
+
+    // Геттер для ввода
+    FILE* getInputStream() const
+    {
+        return input_stream_;
+    }
+
     ScopeStack scope_stack;
     EvaluationStack eval_stack;
 
     void Run(BlockStmt& root);
 };
-
 } // namespace language
 
 #endif // INTERPRETER_HPP
