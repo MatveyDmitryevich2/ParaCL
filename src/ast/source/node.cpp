@@ -61,6 +61,15 @@ void language::BinaryOp::evaluate(Interpreter& interp)
     case Op::MUL:
         res = left_val * right_val;
         break;
+    case Op::MOD:
+
+        if (right_val == 0)
+        {
+            throw std::runtime_error("Mod by zero!");
+        }
+        res = left_val % right_val;
+        break;
+
     case Op::DIV:
 
         if (right_val == 0)
@@ -85,7 +94,7 @@ void language::UnaryOp::evaluate(Interpreter& interp)
 
     switch (op_)
     {
-    case Op::MINUS:
+    case Op::UMINUS:
         interp.eval_stack.PushValue(-val);
         break;
     case Op::NOT:
@@ -125,7 +134,6 @@ void language::ScanfExpr::evaluate(Interpreter& interp)
 {
     int value = 0;
 
-    // Читаем из потока интерпретатора
     if (fscanf(interp.getInputStream(), "%d", &value) != 1)
     {
         throw std::runtime_error("Failed to read input");

@@ -54,6 +54,7 @@ public:
         SUB,
         MUL,
         DIV,
+        MOD,
         OR,
         AND,
         EQ,
@@ -96,7 +97,7 @@ class UnaryOp : public IExpression
 public:
     enum class Op
     {
-        MINUS,
+        UMINUS,
         NOT
     };
 

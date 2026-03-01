@@ -40,6 +40,7 @@ extern language::AST* ast_ptr;
 "-"  { return yy::parser::token::MINUS; }
 "*"  { return yy::parser::token::MUL;   }
 "/"  { return yy::parser::token::DIV;   }
+"%"  { return yy::parser::token::MOD;   }
 
 "==" { return yy::parser::token::EQ;    }
 "!=" { return yy::parser::token::NE;    }

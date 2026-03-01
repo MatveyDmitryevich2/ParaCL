@@ -140,15 +140,13 @@ public:
 class Interpreter
 {
 private:
-    FILE* input_stream_; // ← Поток для ввода (?)
+    FILE* input_stream_;
 
 public:
-    // Конструктор (по умолчанию stdin)
     Interpreter(FILE* input = stdin) : input_stream_(input)
     {
     }
 
-    // Геттер для ввода
     FILE* getInputStream() const
     {
         return input_stream_;

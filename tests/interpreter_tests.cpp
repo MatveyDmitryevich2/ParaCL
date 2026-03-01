@@ -341,6 +341,49 @@ TEST_F(InterpreterTest, UndefinedVariable_Throws)
 }
 
 // ------------------------------------------------------------
+//  Mod tests
+// ------------------------------------------------------------
+
+TEST_F(InterpreterTest, Modulo_Basic)
+{
+    EXPECT_EQ(run("print 7 % 3 ;"), "1\n");
+    EXPECT_EQ(run("print 10 % 5 ;"), "0\n");
+    EXPECT_EQ(run("print 3 % 7 ;"), "3\n");
+}
+
+TEST_F(InterpreterTest, Modulo_Negative)
+{
+    EXPECT_EQ(run("print -7 % 3 ;"), "-1\n");
+    EXPECT_EQ(run("print 7 % -3 ;"), "1\n");
+    EXPECT_EQ(run("print -7 % -3 ;"), "-1\n");
+}
+
+TEST_F(InterpreterTest, Modulo_WithZero)
+{
+    EXPECT_THROW(run("print 5 % 0 ;"), std::runtime_error);
+}
+
+TEST_F(InterpreterTest, Modulo_WithVariables)
+{
+    EXPECT_EQ(run("x = 17; y = 5; print x % y ;"), "2\n");
+    EXPECT_EQ(run("x = 10; print x % 3 ;"), "1\n");
+    EXPECT_EQ(run("x = 8; y = 3; z = x % y; print z;"), "2\n");
+}
+
+TEST_F(InterpreterTest, Modulo_WithExpression)
+{
+    EXPECT_EQ(run("print (10 + 5) % 4 ;"), "3\n");
+    EXPECT_EQ(run("print 20 % (6 + 2) ;"), "4\n");
+    EXPECT_EQ(run("print 7 * 3 % 5 ;"), "1\n");
+}
+
+TEST_F(InterpreterTest, Modulo_Priority)
+{
+    EXPECT_EQ(run("print 10 + 7 % 3 ;"), "11\n");
+    EXPECT_EQ(run("print 10 * 2 % 3 ;"), "2\n");
+    EXPECT_EQ(run("print 10 % 3 * 2 ;"), "2\n");
+}
+// ------------------------------------------------------------
 //  Comments tests
 // ------------------------------------------------------------
 TEST_F(InterpreterTest, Comments_SingleLine)

@@ -27,7 +27,7 @@
 
 %token WHILE IF PRINT SCANF ELSE
 %token EQ NE LE GE L G AND OR NOT
-%token PLUS MINUS MUL DIV
+%token PLUS MINUS MUL DIV MOD
 %token UMINUS
 %token EQUALS
 
@@ -39,8 +39,6 @@
 %type <language::IExpression*> primary_expr
 %type <language::IStatement*> stmt
 %type <language::BlockStmt*> stmt_list
-%type <language::BlockStmt*> stmt_body
-%type <language::BlockStmt*> opt_else
 
 %nonassoc XIF
 %nonassoc ELSE
@@ -52,7 +50,7 @@
 %left EQ NE
 %left LE GE L G
 %left PLUS MINUS
-%left MUL DIV
+%left MUL DIV MOD
 
 %%
 
@@ -61,6 +59,8 @@ program: stmt_list {
     ast->set_root($1);
 }
 ;
+
+
 
 stmt_list:
     %empty {
@@ -72,15 +72,6 @@ stmt_list:
     }
 ;
 
-stmt_body:
-    '{' stmt_list '}' {
-        $$ = $2;
-    }
-    | stmt {
-        $$ = ast->create_block();
-        $$->add_statement($1);
-    }
-;
 
 stmt:
     ';' {
@@ -96,11 +87,16 @@ stmt:
     PRINT expr ';' {
         $$ = ast->create_print($2);
     }
-    | WHILE '(' expr ')' stmt_body {
+    | WHILE '(' expr ')'  stmt {
         $$ = ast->create_while($3, $5);
     }
-    | IF '(' expr ')' stmt_body opt_else {
-        $$ = ast->create_if($3, $5, $6);
+    | IF '(' expr ')' stmt %prec XIF
+    {
+        $$ = ast->create_if($3, $5, nullptr);
+    }
+    | IF '(' expr ')'  stmt ELSE  stmt
+    {
+        $$ = ast->create_if($3, $5, $7);
     }
 
     | '{' stmt_list '}' {
@@ -108,10 +104,6 @@ stmt:
     }
 ;
 
-opt_else:
-    ELSE stmt_body { $$ = $2; }
-    | %prec XIF %empty { $$ = nullptr; }
-;
 
 
 primary_expr:
@@ -125,10 +117,6 @@ primary_expr:
     | SCANF {
         $$ = ast->create_scanf();
     }
-    | '(' VAR EQUALS expr ')' {
-        std::string name = *$2;
-        $$ = ast->create_assignment(name, $4);
-    }
     | '(' expr ')' {
         $$ = $2;
     }
@@ -138,11 +126,7 @@ primary_expr:
 unary_expr :
     primary_expr
   | MINUS unary_expr %prec UMINUS {
-        $$ = ast->create_binary_op(
-            language::BinaryOp::Op::SUB,
-            ast->create_number(0),
-            $2
-        );
+        $$ = ast->create_unary(language::UnaryOp::Op::UMINUS, $2);
     }
     | NOT unary_expr %prec UMINUS {
         $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
@@ -186,6 +170,9 @@ expr:
     }
     | expr DIV expr {
         $$ = ast->create_binary_op(language::BinaryOp::Op::DIV, $1, $3);
+    }
+    | expr MOD expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::MOD, $1, $3);
     }
     | VAR EQUALS expr %prec EQUALS {
         std::string name = *$1;
