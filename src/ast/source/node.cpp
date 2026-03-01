@@ -4,8 +4,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "interpreter.hpp"
-#include "node.hpp"
+#include "interpreter/interpreter.hpp"
+#include "ast/node.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
 {

@@ -1,10 +1,12 @@
 #define _GNU_SOURCE 1
-#include "ast.hpp"
-#include "interpreter.hpp"
-#include "parser.tab.hpp"
-#include <gtest/gtest.h>
+
 #include <stdio.h>
 #include <string>
+#include <gtest/gtest.h>
+
+#include "ast/ast.hpp"
+#include "interpreter/interpreter.hpp"
+#include "parser.tab.hpp"
 
 extern FILE* yyin;
 extern int yylineno;

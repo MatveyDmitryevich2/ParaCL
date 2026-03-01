@@ -11,8 +11,8 @@
     #include <string>
     #include <memory>
     #include <iostream>
-    #include "ast.hpp"
-    #include "node.hpp"
+    #include "ast/ast.hpp"
+    #include "ast/node.hpp"
 }
 
 %code {

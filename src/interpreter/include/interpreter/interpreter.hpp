@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "fwd.hpp"
-#include "node.hpp"
+#include "ast/fwd.hpp"
+#include "ast/node.hpp"
 
 namespace language
 {

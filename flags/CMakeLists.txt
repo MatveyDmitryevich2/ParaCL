@@ -24,7 +24,7 @@ target_compile_options(pcl-defaults
         $<$<CONFIG:Release>:
             -O2
             -march=native
-            -flto
+            #-flto
             -DNDEBUG
         >
 )
@@ -41,7 +41,7 @@ target_link_options(pcl-defaults
         $<$<CONFIG:Release>:
             -O2
             -march=native
-            -flto
+            #-flto
         >
 )
 

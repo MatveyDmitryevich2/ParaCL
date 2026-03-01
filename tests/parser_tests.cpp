@@ -1,10 +1,12 @@
 #define _GNU_SOURCE 1
-#include "ast.hpp"
-#include "parser.tab.hpp"
+
 #include <gtest/gtest.h>
 #include <sstream>
 #include <stdio.h>
 #include <string>
+
+#include "ast/ast.hpp"
+#include "parser.tab.hpp"
 
 extern yy::parser::semantic_type* yylval;
 extern yy::parser::location_type* yylloc;

@@ -1,6 +1,6 @@
-#include "ast.hpp"
-#include "interpreter.hpp"
-#include "node.hpp"
+#include "ast/ast.hpp"
+#include "interpreter/interpreter.hpp"
+#include "ast/node.hpp"
 #include "parser.tab.hpp"
 
 #include <iostream>
