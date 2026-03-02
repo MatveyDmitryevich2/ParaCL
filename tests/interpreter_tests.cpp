@@ -1,8 +1,8 @@
 #define _GNU_SOURCE 1
 
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string>
-#include <gtest/gtest.h>
 
 #include "ast/ast.hpp"
 #include "interpreter/interpreter.hpp"

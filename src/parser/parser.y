@@ -40,11 +40,10 @@
 %type <language::IStatement*> stmt
 %type <language::BlockStmt*> stmt_list
 
-%nonassoc XIF
-%nonassoc ELSE
+%precedence XIF
+%precedence ELSE
 
-%right NOT UMINUS
-%right EQUALS
+%precedence EQUALS
 %left OR
 %left AND
 %left EQ NE
@@ -90,6 +89,7 @@ stmt:
     | WHILE '(' expr ')'  stmt {
         $$ = ast->create_while($3, $5);
     }
+
     | IF '(' expr ')' stmt %prec XIF
     {
         $$ = ast->create_if($3, $5, nullptr);
@@ -98,7 +98,6 @@ stmt:
     {
         $$ = ast->create_if($3, $5, $7);
     }
-
     | '{' stmt_list '}' {
         $$ = $2;
     }
@@ -128,11 +127,9 @@ unary_expr :
   | MINUS unary_expr %prec UMINUS {
         $$ = ast->create_unary(language::UnaryOp::Op::UMINUS, $2);
     }
-    | NOT unary_expr %prec UMINUS {
+    | NOT unary_expr %prec NOT {
         $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
     }
-
-
 ;
 expr:
      expr OR expr {
