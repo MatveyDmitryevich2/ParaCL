@@ -45,7 +45,7 @@ cmake --build build
 ```
 ## Running the Interpreter
 ```bash
-./build/bin/ParaCL program.pcl
+./build/ParaCL program.pcl
 ```
 
 ## Testing
