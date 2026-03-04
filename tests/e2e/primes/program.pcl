@@ -1,0 +1,28 @@
+n = ?;
+x = 2;
+
+while (x <= n) {
+    isPrime = 1;
+
+    if (x <= 1) {
+        isPrime = 0;
+    } else {
+        d = 2;
+        // пока d*d <= x
+        while (d * d <= x) {
+            if (x % d == 0) {
+                isPrime = 0;
+                // "break" через выставление d так, чтобы выйти
+                d = x;
+            } else {
+                d = d + 1;
+            }
+        }
+    }
+
+    if (isPrime == 1) {
+        print x;
+    }
+
+    x = x + 1;
+}

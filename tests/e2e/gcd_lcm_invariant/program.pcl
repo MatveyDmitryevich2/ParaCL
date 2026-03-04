@@ -1,0 +1,51 @@
+a = ?;
+b = ?;
+
+aa = a;
+bb = b;
+
+if (aa < 0) { aa = -aa; }
+if (bb < 0) { bb = -bb; }
+
+g = 0;
+l = 0;
+ok = 1;
+
+if (aa == 0 && bb == 0) {
+    g = 0;
+    l = 0;
+    ok = 1;
+} else {
+    x = aa;
+    y = bb;
+
+    if (x == 0 || y == 0) {
+        if (x == 0) { g = y; } else { g = x; }
+    } else {
+        while (y != 0) {
+            t = x % y;
+            x = y;
+            y = t;
+        }
+        g = x;
+    }
+
+    if (aa == 0 || bb == 0) {
+        l = 0;
+    } else {
+        l = (aa / g) * bb;
+    }
+
+    if (!(aa == 0 || bb == 0)) {
+        if (g * l != aa * bb) { ok = 0; }
+    }
+
+    if (l != 0) {
+        if (l % aa != 0) { ok = 0; }
+        if (l % bb != 0) { ok = 0; }
+    }
+}
+
+print g;
+print l;
+print ok;

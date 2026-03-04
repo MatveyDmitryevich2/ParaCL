@@ -6,8 +6,9 @@ find_package(GTest REQUIRED)
 
 target_sources(pcl_tests
     PRIVATE
-        interpreter_tests.cpp
-        parser_tests.cpp
+        unit/interpreter_tests.cpp
+        unit/parser_tests.cpp
+
 )
 
 target_link_libraries(pcl_tests

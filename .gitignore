@@ -2,7 +2,15 @@ build/
 .vscode/
 *.dot
 *.pdf
-*.svg
 *.pcl
+*.svg
 *.png
 !images/*.png
+
+!tests/e2e/
+!tests/e2e/**/
+!tests/e2e/**/*.pcl
+!tests/e2e_2_e/**/*.txt
+!tests/e2e/**/*.expected
+!tests/e2e/**/*.input
+!tests/e2e/run_tests.sh

@@ -49,22 +49,64 @@ cmake --build build
 ```
 
 ## Testing
-The project includes unit tests for both the parser and the interpreter.
 
-### Run all tests
+The project includes comprehensive unit tests and end-to-end tests.
+
+### Unit Tests (Google Test)
+
+The unit tests cover both the parser and interpreter functionality .
+
+#### Prerequisites
+- Google Test framework (automatically downloaded by CMake)
+
+#### Run all unit tests
+
 ```bash
+# Using the test executable directly
 cd build
+./tests/pcl_tests
+```
+
+# Or using CTest (if configured)
+```bash
+cd build/tests
 ctest -V
 ```
-### Parser tests only
+# Run specific test suites
 ```bash
-./build/paracl_parser_tests
+# All interpreter tests (42 tests)
+./build/tests/pcl_tests --gtest_filter=InterpreterTest.*
+
+# All parser tests (33 tests)
+./build/tests/pcl_tests --gtest_filter=ParserTest.*
+
+# Filter tests by name pattern
+
+## Arithmetic tests
+./build/tests/pcl_tests --gtest_filter="*Arithmetic*"
+
+## Variable tests
+./build/tests/pcl_tests --gtest_filter="*Variable*"
+
+## While loop tests
+./build/tests/pcl_tests --gtest_filter="*While*"
 ```
-### Interpreter tests only
+# End-to-End Tests
+The project includes end-to-end tests that run complete programs.
+
+Test programs:
+Fibonacci sequence - generates first N numbers
+
+GCD (Euclidean algorithm) - finds greatest common divisor
+
+Factorial - calculates factorial of a number
+
+Collatz sequence - generates Collatz sequence for a given number
+
+## Run all E2E tests
 ```bash
-./build/paracl_interpreter_tests
+cd tests/e_2_e
+chmod +x run_tests.sh
+./run_tests.sh
 ```
-### Filter by test name pattern
-```bash
-./build/paracl_interpreter_tests --gtest_filter="*Arithmetic*"
-```
+
