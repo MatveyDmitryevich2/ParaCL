@@ -11,7 +11,8 @@ target_include_directories(pcl_ast
 )
 
 target_link_libraries(pcl_ast
-    PRIVATE
+    PUBLIC
         pcl-defaults
         pcl_interpreter
+        pcl_error
 )

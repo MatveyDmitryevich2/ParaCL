@@ -9,4 +9,5 @@ target_link_libraries(pcl_interpreter
     INTERFACE
         pcl-defaults
         pcl_ast
+        pcl_error
 )

@@ -6,6 +6,7 @@ add_subdirectory(flags)
 add_subdirectory(src/ast)
 add_subdirectory(src/interpreter)
 add_subdirectory(src/parser)
+add_subdirectory(src/error)
 
 add_executable(ParaCL
     src/main.cpp

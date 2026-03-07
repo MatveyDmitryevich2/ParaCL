@@ -6,6 +6,7 @@
 
 #include "ast/node.hpp"
 #include "interpreter/interpreter.hpp"
+#include "error/error.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
 {
@@ -14,7 +15,23 @@ void language::Number::evaluate(Interpreter& interp)
 
 void language::Variable::evaluate(Interpreter& interp)
 {
-    interp.eval_stack.PushValue(interp.scope_stack.GetValueVariable(name_));
+    try
+    {
+        interp.eval_stack.PushValue(interp.scope_stack.GetValueVariable(name_));
+    }
+    catch (const RuntimeDiagError&)
+    {
+        throw;
+    }
+    catch (const std::exception&)
+    {
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Runtime;
+        diagnostic.message = "variable '" + name_ + "' is not defined";
+        diagnostic.range = range();
+        diagnostic.add_message.push_back("assign a value to the variable before using it");
+        throw RuntimeDiagError(std::move(diagnostic));
+    }
 }
 
 void language::BinaryOp::evaluate(Interpreter& interp)
@@ -65,7 +82,12 @@ void language::BinaryOp::evaluate(Interpreter& interp)
 
         if (right_val == 0)
         {
-            throw std::runtime_error("Mod by zero!");
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Runtime;
+            diagnostic.message = "modulo by zero";
+            diagnostic.range = range();
+            diagnostic.add_message.push_back("right operand evaluated to 0");
+            throw RuntimeDiagError(std::move(diagnostic));
         }
         res = left_val % right_val;
         break;
@@ -74,13 +96,21 @@ void language::BinaryOp::evaluate(Interpreter& interp)
 
         if (right_val == 0)
         {
-            throw std::runtime_error("Division by zero!");
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Runtime;
+            diagnostic.message = "division by zero";
+            diagnostic.range = range();
+            diagnostic.add_message.push_back("right operand evaluated to 0");
+            throw RuntimeDiagError(std::move(diagnostic));
         }
         res = left_val / right_val;
         break;
 
     default:
-        throw std::runtime_error("Unknown binary operator");
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Internal;
+        diagnostic.message = "unknown binary operator";
+        throw InternalError(std::move(diagnostic));
     }
 
     interp.eval_stack.PushValue(res);
@@ -101,7 +131,10 @@ void language::UnaryOp::evaluate(Interpreter& interp)
         interp.eval_stack.PushValue((val == 0) ? 1 : 0);
         break;
     default:
-        throw std::runtime_error("Unknown unary operator");
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Internal;
+        diagnostic.message = "unknown unary operator";
+        throw InternalError(std::move(diagnostic));
     }
 }
 
@@ -136,7 +169,11 @@ void language::ScanfExpr::evaluate(Interpreter& interp)
 
     if (fscanf(interp.getInputStream(), "%d", &value) != 1)
     {
-        throw std::runtime_error("Failed to read input");
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Runtime;
+        diagnostic.message = "failed to read integer from input";
+        diagnostic.range = range();
+        throw RuntimeDiagError(std::move(diagnostic));
     }
 
     interp.eval_stack.PushValue(value);

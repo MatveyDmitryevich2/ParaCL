@@ -8,6 +8,7 @@
 
 #include "ast/fwd.hpp"
 #include "ast/node.hpp"
+#include "error/error.hpp"
 
 namespace language
 {
@@ -61,7 +62,13 @@ public:
     void DeleteScope()
     {
         if (stack.empty())
-            throw std::runtime_error("DeleteScope on empty stack");
+        {
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Internal;
+            diagnostic.message = "DeleteScope on empty stack";
+            throw InternalError(std::move(diagnostic));
+        }
+
         stack.pop_back();
     }
     bool IsEmpty() const
@@ -100,7 +107,10 @@ public:
             if (current_table.IsVariableExist(name_variable))
                 return current_table.GetValue(name_variable);
         }
-        throw std::runtime_error("Variable not found: " + name_variable);
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Runtime;
+        diagnostic.message = "variable not found: " + name_variable;
+        throw RuntimeDiagError(std::move(diagnostic));
     }
 };
 
@@ -113,7 +123,13 @@ public:
     int PopValue()
     {
         if (stack.empty())
-            throw std::runtime_error("PopValue on empty stack");
+        {
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Internal;
+            diagnostic.message = "PopValue on empty stack";
+            throw InternalError(std::move(diagnostic));
+        }
+
         int top_value = stack.back();
         stack.pop_back();
         return top_value;
@@ -132,7 +148,12 @@ public:
     int SeeTop() const
     {
         if (stack.empty())
-            throw std::runtime_error("SeeTop on empty stack");
+        {
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Internal;
+            diagnostic.message = "SeeTop on empty stack";
+            throw InternalError(std::move(diagnostic));
+        }
         return stack.back();
     }
 };

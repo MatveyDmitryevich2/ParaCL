@@ -30,4 +30,5 @@ target_include_directories(pcl_parser
 
 target_link_libraries(pcl_parser
     pcl_ast
+    pcl_error
 )

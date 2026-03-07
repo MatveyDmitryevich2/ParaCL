@@ -14,3 +14,4 @@ build/
 !tests/e2e/**/*.expected
 !tests/e2e/**/*.input
 !tests/e2e/run_tests.sh
+Testing/

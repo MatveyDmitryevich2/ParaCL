@@ -9,18 +9,31 @@
 
 %code requires {
     #include <string>
-    #include <memory>
-    #include <iostream>
     #include "ast/ast.hpp"
     #include "ast/node.hpp"
+    #include "error/error.hpp"
 }
 
 %code {
-    #include <iostream>
+    #include <utility>
+
+    namespace yy {
+        extern int yycolno;
+        extern std::string current_line;
+        extern std::string last_complete_line;
+    }
+
     int yylex(yy::parser::semantic_type* yylval,
               yy::parser::location_type* yylloc,
               language::AST* ast);
 
+    SourceRange ToSourceRange(const yy::parser::location_type& loc)
+    {
+        return SourceRange{
+            { loc.begin.line, loc.begin.column },
+            { loc.end.line,   loc.end.column + 1 }
+        };
+    }
 }
 
 %debug
@@ -42,148 +55,223 @@
 
 %precedence XIF
 %precedence ELSE
-
-%precedence EQUALS
+%right EQUALS
 %left OR
 %left AND
 %left EQ NE
 %left LE GE L G
 %left PLUS MINUS
 %left MUL DIV MOD
+%right NOT UMINUS
 
 %%
 
-program: stmt_list {
-
-    ast->set_root($1);
-}
+program:
+    stmt_list
+    {
+        $1->set_range(ToSourceRange(@$));
+        ast->set_root($1);
+    }
 ;
 
-
-
 stmt_list:
-    %empty {
+    %empty
+    {
         $$ = ast->create_block();
+        $$->set_range(ToSourceRange(@$));
     }
-    | stmt_list stmt {
+    | stmt_list stmt
+    {
         $1->add_statement($2);
+        $1->set_range(ToSourceRange(@$));
         $$ = $1;
     }
 ;
 
-
 stmt:
-    ';' {
+    ';'
+    {
         $$ = ast->create_block();
+        $$->set_range(ToSourceRange(@$));
     }
-    |
-    VAR EQUALS expr ';'  {
+    | VAR EQUALS expr ';'
+    {
         std::string name = *$1;
-        auto* assign = ast->create_assignment(name, $3);
-        $$ = ast->create_expression_stmt(assign);
-    }
-    |
-    PRINT expr ';' {
-        $$ = ast->create_print($2);
-    }
-    | WHILE '(' expr ')'  stmt {
-        $$ = ast->create_while($3, $5);
-    }
 
+        auto* assign = ast->create_assignment(name, $3);
+        assign->set_range(ToSourceRange(@$));
+
+        $$ = ast->create_expression_stmt(assign);
+        $$->set_range(ToSourceRange(@$));
+    }
+    | PRINT expr ';'
+    {
+        $$ = ast->create_print($2);
+        $$->set_range(ToSourceRange(@$));
+    }
+    | WHILE '(' expr ')' stmt
+    {
+        $$ = ast->create_while($3, $5);
+        $$->set_range(ToSourceRange(@$));
+    }
     | IF '(' expr ')' stmt %prec XIF
     {
         $$ = ast->create_if($3, $5, nullptr);
+        $$->set_range(ToSourceRange(@$));
     }
     | IF '(' expr ')'  stmt ELSE  stmt
     {
         $$ = ast->create_if($3, $5, $7);
+        $$->set_range(ToSourceRange(@$));
     }
-    | '{' stmt_list '}' {
+    | '{' stmt_list '}'
+    {
         $$ = $2;
+        $$->set_range(ToSourceRange(@$));
     }
 ;
-
-
 
 primary_expr:
-    NUMBER {
+    NUMBER
+    {
         $$ = ast->create_number($1);
+        $$->set_range(ToSourceRange(@$));
     }
-    | VAR {
+    | VAR
+    {
         std::string name = *$1;
         $$ = ast->create_variable(name);
+        $$->set_range(ToSourceRange(@$));
     }
-    | SCANF {
+    | SCANF
+    {
         $$ = ast->create_scanf();
+        $$->set_range(ToSourceRange(@$));
     }
-    | '(' expr ')' {
+    | '(' expr ')'
+    {
         $$ = $2;
     }
-
 ;
 
-unary_expr :
+unary_expr:
     primary_expr
-  | MINUS unary_expr %prec UMINUS {
+    | MINUS unary_expr %prec UMINUS
+    {
         $$ = ast->create_unary(language::UnaryOp::Op::UMINUS, $2);
+        $$->set_range(ToSourceRange(@$));
     }
-    | NOT unary_expr %prec NOT {
+    | NOT unary_expr %prec NOT
+    {
         $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
+        $$->set_range(ToSourceRange(@$));
     }
 ;
+
 expr:
-     expr OR expr {
+    expr OR expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::OR, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr AND expr {
+    | expr AND expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::AND, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr EQ expr {
+    | expr EQ expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::EQ, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr NE expr {
+    | expr NE expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::NE, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr L expr {
+    | expr L expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::L, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr G expr {
+    | expr G expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::G, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr LE expr {
+    | expr LE expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::LE, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr GE expr {
+    | expr GE expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::GE, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr PLUS expr {
+    | expr PLUS expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::ADD, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr MINUS expr {
+    | expr MINUS expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::SUB, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr MUL expr {
+    | expr MUL expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::MUL, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr DIV expr {
+    | expr DIV expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::DIV, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | expr MOD expr {
+    | expr MOD expr
+    {
         $$ = ast->create_binary_op(language::BinaryOp::Op::MOD, $1, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-    | VAR EQUALS expr %prec EQUALS {
+    | VAR EQUALS expr %prec EQUALS
+    {
         std::string name = *$1;
         $$ = ast->create_assignment(name, $3);
+        $$->set_range(ToSourceRange(@$));
     }
-
     | unary_expr
 ;
 
 %%
 
-namespace yy {
-    void parser::error(const location_type& loc, const std::string& msg) {
-        std::cerr << "Parser ERROR at line " << loc.begin.line
-                  << ": " << msg << std::endl;
+void yy::parser::error(const location_type& loc, const std::string& msg)
+{
+    Diagnostic diagnostic;
+    diagnostic.kind = DiagnosticKind::Syntax;
+    diagnostic.message = msg;
+    diagnostic.range = ToSourceRange(loc);
+
+    if (!yy::current_line.empty())
+    {
+        diagnostic.line_text = yy::current_line;
     }
+    else if (!yy::last_complete_line.empty())
+    {
+        diagnostic.line_text = yy::last_complete_line;
+    }
+
+    if (loc.begin.column <= 1 && !yy::last_complete_line.empty())
+    {
+        diagnostic.add_message.push_back("possible error near the previous line");
+
+        if (yy::last_complete_line.back() != ';' &&
+            yy::last_complete_line.back() != '{' &&
+            yy::last_complete_line.back() != '}')
+        {
+            diagnostic.add_message.push_back("possible missing ';' at the end of the previous statement");
+        }
+    }
+
+    throw ParseError(std::move(diagnostic));
 }
