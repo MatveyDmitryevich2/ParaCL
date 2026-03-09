@@ -3,6 +3,7 @@
 
 #include "fwd.hpp"
 #include "inode.hpp"
+
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -25,6 +26,8 @@ public:
     {
         return value_;
     }
+    void accept(ASTVisitor* visitor) override;
+
     ~Number() = default;
 };
 
@@ -42,6 +45,7 @@ public:
     {
         return name_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~Variable() = default;
 };
 
@@ -88,7 +92,7 @@ public:
     {
         return right_;
     }
-
+    void accept(ASTVisitor* visitor) override;
     ~BinaryOp() = default;
 };
 
@@ -118,6 +122,7 @@ public:
     {
         return expr_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~UnaryOp() = default;
 };
 
@@ -141,6 +146,7 @@ public:
     {
         return expr_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~Assignment() = default;
 };
 class ExpressionStmt : public IStatement
@@ -159,6 +165,7 @@ public:
     {
         return expr_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~ExpressionStmt() = default;
 };
 
@@ -176,6 +183,7 @@ public:
     {
         return expr_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~PrintStmt() = default;
 };
 
@@ -184,6 +192,7 @@ class ScanfExpr : public IExpression
 public:
     ScanfExpr() = default;
     void evaluate(Interpreter& interp) override;
+    void accept(ASTVisitor* visitor) override;
     ~ScanfExpr() = default;
 };
 
@@ -213,6 +222,7 @@ public:
     {
         return body_else_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~IfStmt() = default;
 };
 
@@ -236,6 +246,7 @@ public:
     {
         return body_;
     }
+    void accept(ASTVisitor* visitor) override;
     ~WhileStmt() = default;
 };
 
@@ -259,6 +270,7 @@ public:
     {
         return statements_[i];
     }
+    void accept(ASTVisitor* visitor) override;
     ~BlockStmt() = default;
 };
 

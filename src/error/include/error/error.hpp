@@ -1,8 +1,8 @@
 #ifndef ERROR_HPP
 #define ERROR_HPP
 
-#include <string>
 #include <optional>
+#include <string>
 #include <vector>
 
 enum class DiagnosticKind
@@ -10,6 +10,7 @@ enum class DiagnosticKind
     Lexical,
     Syntax,
     Runtime,
+    Semantic,
     Internal,
 };
 
@@ -38,6 +39,7 @@ class DiagnosticError : public std::exception
 {
 private:
     Diagnostic diagnostic_;
+
 public:
     explicit DiagnosticError(Diagnostic diagnostic)
         : diagnostic_(std::move(diagnostic))
@@ -47,6 +49,15 @@ public:
     const Diagnostic& diagnostic() const noexcept
     {
         return diagnostic_;
+    }
+};
+
+class SemanticError : public DiagnosticError
+{
+public:
+    explicit SemanticError(Diagnostic diagnostic)
+        : DiagnosticError(std::move(diagnostic))
+    {
     }
 };
 

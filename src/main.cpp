@@ -3,10 +3,11 @@
 
 #include "ast/ast.hpp"
 #include "ast/node.hpp"
-#include "interpreter/interpreter.hpp"
-#include "parser.tab.hpp"
 #include "error/error.hpp"
 #include "error/error_print.hpp"
+#include "interpreter/interpreter.hpp"
+#include "parser.tab.hpp"
+#include "visitor/semantic_visitor.hpp"
 
 extern FILE* yyin;
 
@@ -38,6 +39,24 @@ int main(int argc, char** argv)
 
         std::fclose(yyin);
         yyin = nullptr;
+
+        SemanticVisitor visitor;
+        if (ast.get_root())
+        {
+            visitor.analyze(ast.get_root());
+
+            const auto& errors = visitor.get_errors();
+            if (!errors.empty())
+            {
+                std::cerr << "Semantic errors found:" << std::endl;
+                for (const auto& error : errors)
+                {
+                    const auto& diag = error.diagnostic();
+                    PrintDiagnostic(diag, argv[1]);
+                }
+                return 1;
+            }
+        }
 
         language::Interpreter interp;
         interp.Run(*ast.get_root());

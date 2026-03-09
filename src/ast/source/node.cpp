@@ -5,8 +5,9 @@
 #include <unordered_map>
 
 #include "ast/node.hpp"
-#include "interpreter/interpreter.hpp"
 #include "error/error.hpp"
+#include "interpreter/interpreter.hpp"
+#include "visitor/visitor_fwd.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
 {
@@ -29,7 +30,8 @@ void language::Variable::evaluate(Interpreter& interp)
         diagnostic.kind = DiagnosticKind::Runtime;
         diagnostic.message = "variable '" + name_ + "' is not defined";
         diagnostic.range = range();
-        diagnostic.add_message.push_back("assign a value to the variable before using it");
+        diagnostic.add_message.push_back(
+            "assign a value to the variable before using it");
         throw RuntimeDiagError(std::move(diagnostic));
     }
 }
@@ -215,4 +217,59 @@ void language::BlockStmt::evaluate(Interpreter& interp)
 void language::Interpreter::Run(BlockStmt& root)
 {
     root.evaluate(*this);
+}
+
+void language::Number::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::Variable::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::BinaryOp::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::UnaryOp::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::Assignment::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::ExpressionStmt::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::PrintStmt::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::ScanfExpr::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::IfStmt::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::WhileStmt::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
+}
+
+void language::BlockStmt::accept(ASTVisitor* visitor)
+{
+    visitor->visit(this);
 }

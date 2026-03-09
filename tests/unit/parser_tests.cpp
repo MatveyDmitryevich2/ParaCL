@@ -1,12 +1,22 @@
 #define _GNU_SOURCE 1
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <stdio.h>
 #include <string>
 
 #include "ast/ast.hpp"
+#include "error/error.hpp"
+#include "error/error_print.hpp"
 #include "parser.tab.hpp"
+
+namespace yy
+{
+extern int yycolno;
+extern std::string current_line;
+extern std::string last_complete_line;
+} // namespace yy
 
 extern yy::parser::semantic_type* yylval;
 extern yy::parser::location_type* yylloc;
@@ -16,26 +26,167 @@ extern int yylineno;
 class ParserTest : public ::testing::Test
 {
 protected:
-    bool parse(const std::string& code)
+    struct ParseResult
     {
+        bool success;
+        std::optional<Diagnostic> diagnostic;
+
+        static ParseResult Success()
+        {
+            return {true, std::nullopt};
+        }
+
+        static ParseResult Error(Diagnostic diag)
+        {
+            return {false, std::move(diag)};
+        }
+    };
+
+    void SetUp() override
+    {
+        resetGlobalState();
+    }
+
+    void TearDown() override
+    {
+        resetGlobalState();
+    }
+
+    void resetGlobalState()
+    {
+
+        yylineno = 1;
+        yy::yycolno = 1;
+        yy::current_line.clear();
+
+        yy::last_complete_line.clear();
+
+        if (yyin)
+        {
+            fclose(yyin);
+            yyin = nullptr;
+        }
+    }
+    ParseResult parse(const std::string& code)
+    {
+        resetGlobalState();
 
         FILE* tmp = fmemopen((void*)code.c_str(), code.size(), "r");
         if (!tmp)
-            return false;
+        {
+            Diagnostic diag;
+            diag.kind = DiagnosticKind::Internal;
+            diag.message = "Failed to open memory stream";
+            return ParseResult::Error(std::move(diag));
+        }
 
         FILE* old_yyin = yyin;
         yyin = tmp;
 
-        yylineno = 1;
-
         language::AST driver;
         yy::parser parser(&driver);
-        int result = parser.parse();
 
-        yyin = old_yyin;
-        fclose(tmp);
+        try
+        {
+            int result = parser.parse();
 
-        return result == 0;
+            yyin = old_yyin;
+            fclose(tmp);
+
+            if (result == 0)
+            {
+                return ParseResult::Success();
+            }
+            else
+            {
+                Diagnostic diag;
+                diag.kind = DiagnosticKind::Internal;
+                diag.message = "Parser returned non-zero without exception";
+                return ParseResult::Error(std::move(diag));
+            }
+        }
+        catch (const DiagnosticError& e)
+        {
+            yyin = old_yyin;
+            fclose(tmp);
+
+            return ParseResult::Error(e.diagnostic());
+        }
+        catch (const std::exception& e)
+        {
+            yyin = old_yyin;
+            fclose(tmp);
+
+            Diagnostic diag;
+            diag.kind = DiagnosticKind::Internal;
+            diag.message = e.what();
+            return ParseResult::Error(std::move(diag));
+        }
+    }
+
+    void expectSuccess(const std::string& code)
+    {
+        auto result = parse(code);
+        EXPECT_TRUE(result.success)
+            << "Expected success but got error: "
+            << (result.diagnostic ? result.diagnostic->message
+                                  : "unknown error");
+    }
+
+    void expectError(const std::string& code, DiagnosticKind expected_kind,
+                     const std::string& expected_substr = "")
+    {
+        auto result = parse(code);
+
+        EXPECT_FALSE(result.success) << "Expected error but got success";
+        ASSERT_TRUE(result.diagnostic.has_value()) << "No diagnostic provided";
+
+        EXPECT_EQ(result.diagnostic->kind, expected_kind);
+
+        if (!expected_substr.empty())
+        {
+            EXPECT_NE(result.diagnostic->message.find(expected_substr),
+                      std::string::npos)
+                << "Expected message containing: '" << expected_substr
+                << "', but got: '" << result.diagnostic->message << "'";
+        }
+    }
+
+    void expectSyntaxError(const std::string& code,
+                           const std::string& substr = "")
+    {
+        expectError(code, DiagnosticKind::Syntax, substr);
+    }
+
+    void expectLexicalError(const std::string& code,
+                            const std::string& substr = "")
+    {
+        expectError(code, DiagnosticKind::Lexical, substr);
+    }
+
+    void expectHint(const std::string& code, const std::string& expected_hint)
+    {
+        auto result = parse(code);
+
+        ASSERT_FALSE(result.success) << "Expected error but got success";
+        ASSERT_TRUE(result.diagnostic.has_value()) << "No diagnostic provided";
+
+        EXPECT_NE(result.diagnostic->line_text.find("y = 10;"),
+                  std::string::npos)
+            << "Line text should contain 'y = 10;', but got: '"
+            << result.diagnostic->line_text << "'";
+
+        bool found = false;
+        for (const auto& hint : result.diagnostic->add_message)
+        {
+            if (hint.find(expected_hint) != std::string::npos)
+            {
+                found = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(found) << "Expected hint '" << expected_hint
+                           << "' not found in error messages";
     }
 };
 
@@ -45,52 +196,52 @@ protected:
 
 TEST_F(ParserTest, NumberLiteral)
 {
-    EXPECT_TRUE(parse("print (5);"));
+    expectSuccess("print (5);");
 }
 
 TEST_F(ParserTest, VariableReference)
 {
-    EXPECT_TRUE(parse("x = 5; print (x);"));
+    expectSuccess("x = 5; print (x);");
 }
 
 TEST_F(ParserTest, BasicAddition)
 {
-    EXPECT_TRUE(parse("print (2 + 3);"));
+    expectSuccess("print (2 + 3);");
 }
 
 TEST_F(ParserTest, BasicSubtraction)
 {
-    EXPECT_TRUE(parse("print (5 - 2);"));
+    expectSuccess("print (5 - 2);");
 }
 
 TEST_F(ParserTest, BasicMultiplication)
 {
-    EXPECT_TRUE(parse("print (3 * 4);"));
+    expectSuccess("print (3 * 4);");
 }
 
 TEST_F(ParserTest, BasicDivision)
 {
-    EXPECT_TRUE(parse("print (10 / 2);"));
+    expectSuccess("print (10 / 2);");
 }
 
 TEST_F(ParserTest, ComplexExpression)
 {
-    EXPECT_TRUE(parse("print (2 + 3 * 4);"));
+    expectSuccess("print (2 + 3 * 4);");
 }
 
 TEST_F(ParserTest, ExpressionWithParentheses)
 {
-    EXPECT_TRUE(parse("print ((2 + 3) * 4);"));
+    expectSuccess("print ((2 + 3) * 4);");
 }
 
 TEST_F(ParserTest, NestedParentheses)
 {
-    EXPECT_TRUE(parse("print ((2 + 3) * (4 - 1));"));
+    expectSuccess("print ((2 + 3) * (4 - 1));");
 }
 
 TEST_F(ParserTest, MultipleOperations)
 {
-    EXPECT_TRUE(parse("print (1 + 2 - 3 * 4 / 2);"));
+    expectSuccess("print (1 + 2 - 3 * 4 / 2);");
 }
 
 // ------------------------------------------------------------
@@ -99,37 +250,37 @@ TEST_F(ParserTest, MultipleOperations)
 
 TEST_F(ParserTest, BasicAssignment)
 {
-    EXPECT_TRUE(parse("x = 5;"));
+    expectSuccess("x = 5;");
 }
 
 TEST_F(ParserTest, AssignmentWithExpression)
 {
-    EXPECT_TRUE(parse("a = 1 + 2;"));
+    expectSuccess("a = 1 + 2;");
 }
 
 TEST_F(ParserTest, MultipleAssignments)
 {
-    EXPECT_TRUE(parse("x = 5; y = 10; z = x + y;"));
+    expectSuccess("x = 5; y = 10; z = x + y;");
 }
 
 TEST_F(ParserTest, Reassignment)
 {
-    EXPECT_TRUE(parse("x = 5; x = x + 1;"));
+    expectSuccess("x = 5; x = x + 1;");
 }
 
 TEST_F(ParserTest, PrintStatement)
 {
-    EXPECT_TRUE(parse("print (42);"));
+    expectSuccess("print (42);");
 }
 
 TEST_F(ParserTest, PrintVariable)
 {
-    EXPECT_TRUE(parse("x = 10; print (x);"));
+    expectSuccess("x = 10; print (x);");
 }
 
 TEST_F(ParserTest, PrintExpression)
 {
-    EXPECT_TRUE(parse("print (2 + 3 * 4);"));
+    expectSuccess("print (2 + 3 * 4);");
 }
 
 // ------------------------------------------------------------
@@ -138,27 +289,32 @@ TEST_F(ParserTest, PrintExpression)
 
 TEST_F(ParserTest, WhileLoopBasic)
 {
-    EXPECT_TRUE(parse("while (0) { x = 5; }"));
+    expectSuccess("while (0) { x = 5; }");
 }
 
 TEST_F(ParserTest, WhileLoopWithCondition)
 {
-    EXPECT_TRUE(parse("x = 5; while (x > 0) { x = x - 1; }"));
+    expectSuccess("x = 5; while (x > 0) { x = x - 1; }");
 }
 
 TEST_F(ParserTest, EmptyWhileBody)
 {
-    EXPECT_TRUE(parse("while (1) { }"));
+    expectSuccess("while (1) { }");
 }
 
 TEST_F(ParserTest, IfStatement)
 {
-    EXPECT_TRUE(parse("if (1) { x = 5; }"));
+    expectSuccess("if (1) { x = 5; }");
+}
+
+TEST_F(ParserTest, IfElseStatement)
+{
+    expectSuccess("if (1) { x = 5; } else { x = 10; }");
 }
 
 TEST_F(ParserTest, NestedIf)
 {
-    EXPECT_TRUE(parse("if (x) { if (y) { z = 1; } }"));
+    expectSuccess("if (x) { if (y) { z = 1; } }");
 }
 
 // ------------------------------------------------------------
@@ -167,22 +323,22 @@ TEST_F(ParserTest, NestedIf)
 
 TEST_F(ParserTest, EmptyBlock)
 {
-    EXPECT_TRUE(parse("{ }"));
+    expectSuccess("{ }");
 }
 
 TEST_F(ParserTest, BlockWithMultipleStatements)
 {
-    EXPECT_TRUE(parse("{ x = 1; y = 2; print (x + y); }"));
+    expectSuccess("{ x = 1; y = 2; print (x + y); }");
 }
 
 TEST_F(ParserTest, NestedBlocks)
 {
-    EXPECT_TRUE(parse("{ { x = 5; } { y = 10; } }"));
+    expectSuccess("{ { x = 5; } { y = 10; } }");
 }
 
 TEST_F(ParserTest, ComplexProgram_WithLogic)
 {
-    EXPECT_TRUE(parse(R"(
+    expectSuccess(R"(
          i = 0;
          sum = 0;
          while (i < 10 && !(i == 7)) {
@@ -194,20 +350,21 @@ TEST_F(ParserTest, ComplexProgram_WithLogic)
          }
          print (i);
          print (sum);
-     )"));
+     )");
 }
-//  ------------------------------------------------------------
-//  5. Scanf
-//  ------------------------------------------------------------
+
+// ------------------------------------------------------------
+// 5. Scanf
+// ------------------------------------------------------------
 
 TEST_F(ParserTest, InputOperator)
 {
-    EXPECT_TRUE(parse("x = ?;"));
+    expectSuccess("x = ?;");
 }
 
 TEST_F(ParserTest, InputInExpression)
 {
-    EXPECT_TRUE(parse("x = ? + 5;"));
+    expectSuccess("x = ? + 5;");
 }
 
 // ------------------------------------------------------------
@@ -216,25 +373,84 @@ TEST_F(ParserTest, InputInExpression)
 
 TEST_F(ParserTest, MissingSemicolon)
 {
-    EXPECT_FALSE(parse("x = 5"));
+    expectSyntaxError("x = 5");
 }
 
 TEST_F(ParserTest, UnclosedParenthesis)
 {
-    EXPECT_FALSE(parse("print (2 + 3;"));
+    expectSyntaxError("print (2 + 3;");
 }
 
 TEST_F(ParserTest, UnclosedBlock)
 {
-    EXPECT_FALSE(parse("{ x = 5;"));
+    expectSyntaxError("{ x = 5;");
 }
 
 TEST_F(ParserTest, UnknownToken)
 {
-    EXPECT_FALSE(parse("x = @;"));
+    expectLexicalError("x = @;", "unexpected character");
 }
 
 TEST_F(ParserTest, InvalidSyntax)
 {
-    EXPECT_FALSE(parse("x = ;"));
+    expectSyntaxError("x = ;");
+}
+
+TEST_F(ParserTest, MissingWhileParenthesis)
+{
+    expectSyntaxError("while x <= 5 { x = x + 1; }");
+}
+
+TEST_F(ParserTest, MissingIfParenthesis)
+{
+    expectSyntaxError("if x == 5 { print x; }");
+}
+
+TEST_F(ParserTest, ExtraClosingBrace)
+{
+    expectSyntaxError("{ x = 5; }}");
+}
+
+TEST_F(ParserTest, InvalidExpression)
+{
+    expectSyntaxError("x = 5 + * 10;");
+}
+
+// ------------------------------------------------------------
+// 7. Check hints
+// ------------------------------------------------------------
+TEST_F(ParserTest, MissingSemicolon_HintAboutPreviousLine)
+{
+    auto result = parse("x = 5\ny = 10;");
+
+    ASSERT_FALSE(result.success);
+    ASSERT_TRUE(result.diagnostic.has_value());
+
+    EXPECT_EQ(result.diagnostic->kind, DiagnosticKind::Syntax);
+    EXPECT_FALSE(result.diagnostic->message.empty());
+}
+
+TEST_F(ParserTest, MissingSemicolon_Debug)
+{
+    auto result = parse("x = 5\ny = 10;");
+
+    ASSERT_FALSE(result.success);
+    ASSERT_TRUE(result.diagnostic.has_value());
+
+    EXPECT_FALSE(result.diagnostic->line_text.empty())
+        << "Line text should not be empty";
+}
+
+TEST_F(ParserTest, Recovery_MultipleErrors)
+{
+
+    auto result = parse("x = ; y = ;");
+    EXPECT_FALSE(result.success);
+}
+
+TEST_F(ParserTest, Out_of_range)
+{
+
+    auto result = parse("x = 999999999999999999999 ;");
+    EXPECT_FALSE(result.success);
 }

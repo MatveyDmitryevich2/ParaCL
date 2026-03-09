@@ -17,30 +17,31 @@ const char* KindToString(DiagnosticKind kind)
         return "runtime error";
     case DiagnosticKind::Internal:
         return "internal error";
+    case DiagnosticKind::Semantic:
+        return "semantic error";
     default:
         return "error";
     }
 }
 } // namespace
 
-void PrintDiagnostic(const Diagnostic& diagnostic,
-                     const std::string& filename)
+void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
 {
-    std::cout << KindToString(diagnostic.kind) << ": "
-        << diagnostic.message << '\n';
+    std::cout << KindToString(diagnostic.kind) << ": " << diagnostic.message
+              << '\n';
 
     if (diagnostic.range.has_value())
     {
         const SourceRange& range = diagnostic.range.value();
 
-        std::cout << " --> " << filename
-            << ":" << range.begin.line
-            << ":" << range.begin.column << '\n';
+        std::cout << " --> " << filename << ":" << range.begin.line << ":"
+                  << range.begin.column << '\n';
 
         if (!diagnostic.line_text.empty())
         {
             std::cout << "  |\n";
-            std::cout << range.begin.line << " | " << diagnostic.line_text << '\n';
+            std::cout << range.begin.line << " | " << diagnostic.line_text
+                      << '\n';
             std::cout << "  | ";
 
             for (int i = 1; i < range.begin.column; ++i)

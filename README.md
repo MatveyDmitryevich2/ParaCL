@@ -105,7 +105,7 @@ Collatz sequence - generates Collatz sequence for a given number
 
 ## Run all E2E tests
 ```bash
-cd tests/e_2_e
+cd tests/e2e
 chmod +x run_tests.sh
 ./run_tests.sh
 ```

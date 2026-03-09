@@ -1,18 +1,17 @@
-add_library(pcl_ast STATIC)
-
-target_sources(pcl_ast
-    PRIVATE
-        source/node.cpp
+add_library(pcl_ast STATIC
+    source/node.cpp
 )
 
 target_include_directories(pcl_ast
     PUBLIC
         include
+        ${CMAKE_SOURCE_DIR}/src/interpreter/include
 )
 
 target_link_libraries(pcl_ast
     PUBLIC
         pcl-defaults
-        pcl_interpreter
         pcl_error
+        pcl_visitor
+        pcl_interpreter
 )

@@ -5,49 +5,84 @@
 #include <string>
 
 #include "ast/ast.hpp"
+#include "error/error.hpp"
 #include "interpreter/interpreter.hpp"
 #include "parser.tab.hpp"
 
 extern FILE* yyin;
 extern int yylineno;
+
+namespace yy
+{
+extern int yycolno;
+extern std::string current_line;
+extern std::string last_complete_line;
+} // namespace yy
+
 class InterpreterTest : public ::testing::Test
 {
 protected:
     FILE* old_yyin = nullptr;
     int old_yylineno = 0;
+    int old_yycolno = 0;
+    std::string old_current_line;
+    std::string old_last_complete_line;
 
     void SetUp() override
     {
+
         old_yyin = yyin;
         old_yylineno = yylineno;
+        old_yycolno = yy::yycolno;
+        old_current_line = yy::current_line;
+        old_last_complete_line = yy::last_complete_line;
+
         yyin = nullptr;
         yylineno = 1;
+        yy::yycolno = 1;
+        yy::current_line.clear();
+        yy::last_complete_line.clear();
     }
 
     void TearDown() override
     {
-        if (yyin != nullptr && yyin != old_yyin)
-        {
-            fclose(yyin);
-        }
+
         yyin = old_yyin;
         yylineno = old_yylineno;
+        yy::yycolno = old_yycolno;
+        yy::current_line = old_current_line;
+        yy::last_complete_line = old_last_complete_line;
     }
 
     std::string run(const std::string& code)
     {
         FILE* tmp = fmemopen((void*)code.c_str(), code.size(), "r");
+        if (!tmp)
+        {
+            throw std::runtime_error("Failed to open memory stream for code");
+        }
+
+        FILE* saved_yyin = yyin;
         yyin = tmp;
         yylineno = 1;
+        yy::yycolno = 1;
+        yy::current_line.clear();
+        yy::last_complete_line.clear();
 
         language::AST ast;
         yy::parser parser(&ast);
         if (parser.parse() != 0)
         {
+            fclose(tmp);
+            yyin = saved_yyin;
             return "";
         }
 
+        fclose(tmp);
+        yyin = saved_yyin;
+
         testing::internal::CaptureStdout();
+        bool output_captured = true;
 
         try
         {
@@ -56,22 +91,35 @@ protected:
         }
         catch (...)
         {
-
-            testing::internal::GetCapturedStdout();
+            if (output_captured)
+            {
+                testing::internal::GetCapturedStdout();
+                output_captured = false;
+            }
             throw;
         }
 
-        return testing::internal::GetCapturedStdout();
+        if (output_captured)
+        {
+            return testing::internal::GetCapturedStdout();
+        }
+        return "";
     }
 
     std::string runWithInput(const std::string& code, const std::string& input)
     {
-
         FILE* code_file = fmemopen((void*)code.c_str(), code.size(), "r");
-        FILE* saved_yyin = yyin;
+        if (!code_file)
+        {
+            throw std::runtime_error("Failed to open memory stream for code");
+        }
 
+        FILE* saved_yyin = yyin;
         yyin = code_file;
         yylineno = 1;
+        yy::yycolno = 1;
+        yy::current_line.clear();
+        yy::last_complete_line.clear();
 
         language::AST ast;
         yy::parser parser(&ast);
@@ -81,11 +129,18 @@ protected:
             yyin = saved_yyin;
             return "";
         }
+
         fclose(code_file);
+        yyin = saved_yyin;
 
         FILE* input_file = fmemopen((void*)input.c_str(), input.size(), "r");
+        if (!input_file)
+        {
+            throw std::runtime_error("Failed to open memory stream for input");
+        }
 
         testing::internal::CaptureStdout();
+        bool output_captured = true;
 
         try
         {
@@ -94,29 +149,43 @@ protected:
         }
         catch (...)
         {
+            if (output_captured)
+            {
+                testing::internal::GetCapturedStdout();
+                output_captured = false;
+            }
             fclose(input_file);
-            yyin = saved_yyin;
-            testing::internal::GetCapturedStdout();
             throw;
         }
 
-        std::string output = testing::internal::GetCapturedStdout();
-
         fclose(input_file);
-        yyin = saved_yyin;
 
-        return output;
+        if (output_captured)
+        {
+            return testing::internal::GetCapturedStdout();
+        }
+        return "";
     }
 
     int getVarValue(const std::string& code, const std::string& var)
     {
         FILE* tmp = fmemopen((void*)code.c_str(), code.size(), "r");
+        if (!tmp)
+        {
+            throw std::runtime_error("Failed to open memory stream");
+        }
+
+        FILE* saved_yyin = yyin;
         yyin = tmp;
         yylineno = 1;
+        yy::yycolno = 1;
 
         language::AST ast;
         yy::parser parser(&ast);
         parser.parse();
+
+        fclose(tmp);
+        yyin = saved_yyin;
 
         language::Interpreter interp;
         interp.Run(*ast.get_root());
@@ -125,9 +194,10 @@ protected:
     }
 };
 
-// ------------------------------------------------------------
+// ============================================================
 //  Arithmetic tests
-// ------------------------------------------------------------
+// ============================================================
+
 TEST_F(InterpreterTest, Addition)
 {
     EXPECT_EQ(run("print 2 + 3 ;"), "5\n");
@@ -189,9 +259,11 @@ TEST_F(InterpreterTest, MultipleUnary)
     EXPECT_EQ(run("print - - -5;"), "-5\n");
     EXPECT_EQ(run("print ! !5;"), "1\n");
 }
-// ------------------------------------------------------------
+
+// ============================================================
 //  Variable tests
-// ------------------------------------------------------------
+// ============================================================
+
 TEST_F(InterpreterTest, Declaration)
 {
     EXPECT_EQ(run("x = 5; print x;"), "5\n");
@@ -210,9 +282,10 @@ TEST_F(InterpreterTest, NestedAssignments)
               "8\n5\n3\n");
 }
 
-// ------------------------------------------------------------
-// Logic tests
-// ------------------------------------------------------------
+// ============================================================
+//  Logic tests
+// ============================================================
+
 TEST_F(InterpreterTest, Or_False)
 {
     EXPECT_EQ(run("print 0 || 0 ;"), "0\n");
@@ -233,9 +306,10 @@ TEST_F(InterpreterTest, Or_TRUE)
     EXPECT_EQ(run("print 0 || 1 ;"), "1\n");
 }
 
-// ------------------------------------------------------------
+// ============================================================
 //  If tests
-// ------------------------------------------------------------
+// ============================================================
+
 TEST_F(InterpreterTest, IfTrue)
 {
     EXPECT_EQ(run("if (1) { print 100 ; }"), "100\n");
@@ -283,9 +357,9 @@ TEST_F(InterpreterTest, ZeroAndNegative)
     EXPECT_EQ(run("x = -1; if (x) { print 1; } else { print 0; }"), "1\n");
 }
 
-// ------------------------------------------------------------
+// ============================================================
 //  While tests
-// ------------------------------------------------------------
+// ============================================================
 
 TEST_F(InterpreterTest, WhileLoop)
 {
@@ -293,14 +367,14 @@ TEST_F(InterpreterTest, WhileLoop)
               "0\n1\n2\n");
 }
 
-// ------------------------------------------------------------
+// ============================================================
 //  Scanf tests
-// ------------------------------------------------------------
+// ============================================================
+
 TEST_F(InterpreterTest, Scanf_Basic)
 {
     std::string code = "x = ?; print x;";
     std::string input = "42\n";
-
     EXPECT_EQ(runWithInput(code, input), "42\n");
 }
 
@@ -308,7 +382,6 @@ TEST_F(InterpreterTest, Scanf_Multiple)
 {
     std::string code = "x = ?; y = ?; print x + y;";
     std::string input = "10\n20\n";
-
     EXPECT_EQ(runWithInput(code, input), "30\n");
 }
 
@@ -322,27 +395,26 @@ TEST_F(InterpreterTest, WhileScanf_StopOnZero)
         print count;
     )";
     std::string input = "5\n3\n1\n0\n";
-
     EXPECT_EQ(runWithInput(code, input), "3\n");
 }
 
-// ------------------------------------------------------------
+// ============================================================
 //  Error tests
-// ------------------------------------------------------------
+// ============================================================
 
 TEST_F(InterpreterTest, DivisionByZero)
 {
-    EXPECT_THROW(run("print(5 / 0);"), std::runtime_error);
+    EXPECT_THROW(run("print(5 / 0);"), DiagnosticError);
 }
 
 TEST_F(InterpreterTest, UndefinedVariable_Throws)
 {
-    EXPECT_THROW(run("print(unknown);"), std::runtime_error);
+    EXPECT_THROW(run("print(unknown);"), DiagnosticError);
 }
 
-// ------------------------------------------------------------
+// ============================================================
 //  Mod tests
-// ------------------------------------------------------------
+// ============================================================
 
 TEST_F(InterpreterTest, Modulo_Basic)
 {
@@ -360,7 +432,7 @@ TEST_F(InterpreterTest, Modulo_Negative)
 
 TEST_F(InterpreterTest, Modulo_WithZero)
 {
-    EXPECT_THROW(run("print 5 % 0 ;"), std::runtime_error);
+    EXPECT_THROW(run("print 5 % 0 ;"), DiagnosticError);
 }
 
 TEST_F(InterpreterTest, Modulo_WithVariables)
@@ -383,9 +455,11 @@ TEST_F(InterpreterTest, Modulo_Priority)
     EXPECT_EQ(run("print 10 * 2 % 3 ;"), "2\n");
     EXPECT_EQ(run("print 10 % 3 * 2 ;"), "2\n");
 }
-// ------------------------------------------------------------
+
+// ============================================================
 //  Comments tests
-// ------------------------------------------------------------
+// ============================================================
+
 TEST_F(InterpreterTest, Comments_SingleLine)
 {
     EXPECT_EQ(run("// this is comment\nprint 5;"), "5\n");

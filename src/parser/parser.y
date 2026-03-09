@@ -77,7 +77,7 @@ program:
 stmt_list:
     %empty
     {
-        $$ = ast->create_block();
+        $$ = ast->make_node<language::BlockStmt>();
         $$->set_range(ToSourceRange(@$));
     }
     | stmt_list stmt
@@ -91,37 +91,37 @@ stmt_list:
 stmt:
     ';'
     {
-        $$ = ast->create_block();
+        $$ = ast->make_node<language::BlockStmt>();
         $$->set_range(ToSourceRange(@$));
     }
     | VAR EQUALS expr ';'
     {
         std::string name = *$1;
 
-        auto* assign = ast->create_assignment(name, $3);
+        auto* assign = ast->make_node<language::Assignment>(name, $3);
         assign->set_range(ToSourceRange(@$));
 
-        $$ = ast->create_expression_stmt(assign);
+        $$ = ast->make_node<language::ExpressionStmt>(assign);
         $$->set_range(ToSourceRange(@$));
     }
     | PRINT expr ';'
     {
-        $$ = ast->create_print($2);
+        $$ = ast->make_node<language::PrintStmt>($2);
         $$->set_range(ToSourceRange(@$));
     }
     | WHILE '(' expr ')' stmt
     {
-        $$ = ast->create_while($3, $5);
+        $$ = ast->make_node<language::WhileStmt>($3, $5);
         $$->set_range(ToSourceRange(@$));
     }
     | IF '(' expr ')' stmt %prec XIF
     {
-        $$ = ast->create_if($3, $5, nullptr);
+        $$ = ast->make_node<language::IfStmt>($3, $5, nullptr);
         $$->set_range(ToSourceRange(@$));
     }
     | IF '(' expr ')'  stmt ELSE  stmt
     {
-        $$ = ast->create_if($3, $5, $7);
+        $$ = ast->make_node<language::IfStmt>($3, $5, $7);
         $$->set_range(ToSourceRange(@$));
     }
     | '{' stmt_list '}'
@@ -134,18 +134,18 @@ stmt:
 primary_expr:
     NUMBER
     {
-        $$ = ast->create_number($1);
+        $$ = ast->make_node<language::Number>($1);
         $$->set_range(ToSourceRange(@$));
     }
     | VAR
     {
         std::string name = *$1;
-        $$ = ast->create_variable(name);
+        $$ = ast->make_node<language::Variable>(name);
         $$->set_range(ToSourceRange(@$));
     }
     | SCANF
     {
-        $$ = ast->create_scanf();
+        $$ = ast->make_node<language::ScanfExpr>();
         $$->set_range(ToSourceRange(@$));
     }
     | '(' expr ')'
@@ -158,12 +158,12 @@ unary_expr:
     primary_expr
     | MINUS unary_expr %prec UMINUS
     {
-        $$ = ast->create_unary(language::UnaryOp::Op::UMINUS, $2);
+        $$ = ast->make_node<language::UnaryOp>(language::UnaryOp::Op::UMINUS, $2);
         $$->set_range(ToSourceRange(@$));
     }
     | NOT unary_expr %prec NOT
     {
-        $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
+        $$ = ast->make_node<language::UnaryOp>(language::UnaryOp::Op::NOT, $2);
         $$->set_range(ToSourceRange(@$));
     }
 ;
@@ -171,73 +171,73 @@ unary_expr:
 expr:
     expr OR expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::OR, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::OR, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr AND expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::AND, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::AND, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr EQ expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::EQ, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::EQ, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr NE expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::NE, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::NE, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr L expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::L, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::L, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr G expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::G, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::G, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr LE expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::LE, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::LE, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr GE expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::GE, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::GE, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr PLUS expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::ADD, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::ADD, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr MINUS expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::SUB, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::SUB, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr MUL expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::MUL, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::MUL, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr DIV expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::DIV, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::DIV, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | expr MOD expr
     {
-        $$ = ast->create_binary_op(language::BinaryOp::Op::MOD, $1, $3);
+        $$ = ast->make_node<language::BinaryOp>(language::BinaryOp::Op::MOD, $1, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | VAR EQUALS expr %prec EQUALS
     {
         std::string name = *$1;
-        $$ = ast->create_assignment(name, $3);
+        $$ = ast->make_node<language::Assignment>(name, $3);
         $$->set_range(ToSourceRange(@$));
     }
     | unary_expr
