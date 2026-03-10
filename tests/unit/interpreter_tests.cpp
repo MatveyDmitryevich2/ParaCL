@@ -15,8 +15,7 @@ extern int yylineno;
 namespace yy
 {
 extern int yycolno;
-extern std::string current_line;
-extern std::string last_complete_line;
+
 } // namespace yy
 
 class InterpreterTest : public ::testing::Test
@@ -25,8 +24,6 @@ protected:
     FILE* old_yyin = nullptr;
     int old_yylineno = 0;
     int old_yycolno = 0;
-    std::string old_current_line;
-    std::string old_last_complete_line;
 
     void SetUp() override
     {
@@ -34,14 +31,10 @@ protected:
         old_yyin = yyin;
         old_yylineno = yylineno;
         old_yycolno = yy::yycolno;
-        old_current_line = yy::current_line;
-        old_last_complete_line = yy::last_complete_line;
 
         yyin = nullptr;
         yylineno = 1;
         yy::yycolno = 1;
-        yy::current_line.clear();
-        yy::last_complete_line.clear();
     }
 
     void TearDown() override
@@ -50,8 +43,6 @@ protected:
         yyin = old_yyin;
         yylineno = old_yylineno;
         yy::yycolno = old_yycolno;
-        yy::current_line = old_current_line;
-        yy::last_complete_line = old_last_complete_line;
     }
 
     std::string run(const std::string& code)
@@ -66,8 +57,6 @@ protected:
         yyin = tmp;
         yylineno = 1;
         yy::yycolno = 1;
-        yy::current_line.clear();
-        yy::last_complete_line.clear();
 
         language::AST ast;
         yy::parser parser(&ast);
@@ -118,8 +107,6 @@ protected:
         yyin = code_file;
         yylineno = 1;
         yy::yycolno = 1;
-        yy::current_line.clear();
-        yy::last_complete_line.clear();
 
         language::AST ast;
         yy::parser parser(&ast);
@@ -412,6 +399,20 @@ TEST_F(InterpreterTest, UndefinedVariable_Throws)
     EXPECT_THROW(run("print(unknown);"), DiagnosticError);
 }
 
+TEST_F(InterpreterTest, OutOfRange)
+{
+    EXPECT_THROW(run("x = 999999999999;"), DiagnosticError);
+}
+
+TEST_F(InterpreterTest, NotAvailableName)
+{
+    EXPECT_THROW(run("123x = 0;"), DiagnosticError);
+}
+
+TEST_F(InterpreterTest, Modulo_WithZero)
+{
+    EXPECT_THROW(run("print 5 % 0 ;"), DiagnosticError);
+}
 // ============================================================
 //  Mod tests
 // ============================================================
@@ -428,11 +429,6 @@ TEST_F(InterpreterTest, Modulo_Negative)
     EXPECT_EQ(run("print -7 % 3 ;"), "-1\n");
     EXPECT_EQ(run("print 7 % -3 ;"), "1\n");
     EXPECT_EQ(run("print -7 % -3 ;"), "-1\n");
-}
-
-TEST_F(InterpreterTest, Modulo_WithZero)
-{
-    EXPECT_THROW(run("print 5 % 0 ;"), DiagnosticError);
 }
 
 TEST_F(InterpreterTest, Modulo_WithVariables)

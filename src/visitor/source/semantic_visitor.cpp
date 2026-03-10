@@ -63,6 +63,18 @@ void SemanticVisitor::visit(language::WhileStmt* node)
 
     if (auto* cond = node->get_condition())
     {
+        if (dynamic_cast<language::Assignment*>(cond))
+        {
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Semantic;
+            diagnostic.message =
+                "assignment in while condition, did you mean '=='?";
+            diagnostic.range = cond->range();
+            diagnostic.add_message.push_back("use '==' for comparison");
+
+            errors_.emplace_back(std::move(diagnostic));
+        }
+
         cond->accept(this);
     }
 
@@ -79,6 +91,18 @@ void SemanticVisitor::visit(language::IfStmt* node)
 
     if (auto* cond = node->get_condition())
     {
+        if (dynamic_cast<language::Assignment*>(cond))
+        {
+            Diagnostic diagnostic;
+            diagnostic.kind = DiagnosticKind::Semantic;
+            diagnostic.message =
+                "assignment in if condition, did you mean '=='?";
+            diagnostic.range = cond->range();
+            diagnostic.add_message.push_back("use '==' for comparison");
+
+            errors_.emplace_back(std::move(diagnostic));
+        }
+
         cond->accept(this);
     }
 
@@ -92,7 +116,6 @@ void SemanticVisitor::visit(language::IfStmt* node)
         else_branch->accept(this);
     }
 }
-
 void SemanticVisitor::visit(language::BinaryOp* node)
 {
     if (!node)
@@ -129,7 +152,7 @@ void SemanticVisitor::visit(language::Variable* node)
 
     if (!isDeclared(name))
     {
-        addError("variable not found: " + name, node);
+        addError("undefined variable " + name, node);
     }
 }
 
@@ -169,7 +192,6 @@ bool SemanticVisitor::isDeclared(const std::string& name) const
     }
     return false;
 }
-
 void SemanticVisitor::addError(const std::string& message,
                                const language::INode* node)
 {

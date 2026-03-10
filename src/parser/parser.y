@@ -19,8 +19,6 @@
 
     namespace yy {
         extern int yycolno;
-        extern std::string current_line;
-        extern std::string last_complete_line;
     }
 
     int yylex(yy::parser::semantic_type* yylval,
@@ -251,27 +249,6 @@ void yy::parser::error(const location_type& loc, const std::string& msg)
     diagnostic.kind = DiagnosticKind::Syntax;
     diagnostic.message = msg;
     diagnostic.range = ToSourceRange(loc);
-
-    if (!yy::current_line.empty())
-    {
-        diagnostic.line_text = yy::current_line;
-    }
-    else if (!yy::last_complete_line.empty())
-    {
-        diagnostic.line_text = yy::last_complete_line;
-    }
-
-    if (loc.begin.column <= 1 && !yy::last_complete_line.empty())
-    {
-        diagnostic.add_message.push_back("possible error near the previous line");
-
-        if (yy::last_complete_line.back() != ';' &&
-            yy::last_complete_line.back() != '{' &&
-            yy::last_complete_line.back() != '}')
-        {
-            diagnostic.add_message.push_back("possible missing ';' at the end of the previous statement");
-        }
-    }
 
     throw ParseError(std::move(diagnostic));
 }

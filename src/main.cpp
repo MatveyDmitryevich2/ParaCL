@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -48,11 +49,9 @@ int main(int argc, char** argv)
             const auto& errors = visitor.get_errors();
             if (!errors.empty())
             {
-                std::cerr << "Semantic errors found:" << std::endl;
                 for (const auto& error : errors)
                 {
-                    const auto& diag = error.diagnostic();
-                    PrintDiagnostic(diag, argv[1]);
+                    PrintDiagnostic(error.diagnostic(), argv[1]);
                 }
                 return 1;
             }

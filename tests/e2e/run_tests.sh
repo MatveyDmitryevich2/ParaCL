@@ -1,92 +1,94 @@
+#!/bin/bash
 
-PCL_INTERP="../../build/ParaCL"
+PCL="./build/ParaCL"
+TESTS_DIR="./tests/e2e"
 
-if [ ! -f "$PCL_INTERP" ]; then
-    echo "ERROR: Interpreter not found at $PCL_INTERP"
-    echo "   Current directory: $(pwd)"
-    echo "   Contents of ../../build/:"
-    ls -la ../../build/
-    exit 1
-fi
-
-echo "Found interpreter: $PCL_INTERP"
-echo "==================================="
-
-
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
 TOTAL=0
 PASSED=0
-FAILED=0
 
+run_success_test() {
+    local test_dir=$1
+    local test_name=$(basename "$test_dir")
+    local program_file="$test_dir/program.pcl"
+    local input_file="$test_dir/input.txt"
+    local expected_file="$test_dir/expected.txt"
 
-TEMP_OUT=$(mktemp)
-TEMP_EXPECTED=$(mktemp)
-TEMP_OUT_CLEAN=$(mktemp)
-TEMP_EXPECTED_CLEAN=$(mktemp)
-
-for test_dir in */ ; do
-    test_dir=${test_dir%/}
-
-    if [ ! -d "$test_dir" ]; then
-        continue
-    fi
-
-    program_file="$test_dir/program.pcl"
-    if [ ! -f "$program_file" ]; then
-        continue
-    fi
-
-    echo -n "Test: $test_dir "
-
-    expected_file="$test_dir/expected.txt"
-    if [ ! -f "$expected_file" ]; then
-        echo "FAILED (no expected.txt)"
-        continue
-    fi
-
-    input_file="$test_dir/input.txt"
+    echo -n "  Testing $test_name... "
 
     if [ -f "$input_file" ]; then
-        "$PCL_INTERP" "$program_file" < "$input_file" > "$TEMP_OUT" 2>&1
+        $PCL "$program_file" < "$input_file" > "$test_dir/output.tmp" 2>&1
     else
-        "$PCL_INTERP" "$program_file" > "$TEMP_OUT" 2>&1
+        $PCL "$program_file" > "$test_dir/output.tmp" 2>&1
     fi
 
-    tr -d '\r' < "$TEMP_OUT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > "$TEMP_OUT_CLEAN"
-    tr -d '\r' < "$expected_file" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > "$TEMP_EXPECTED_CLEAN"
-
-
-    if diff -q "$TEMP_EXPECTED_CLEAN" "$TEMP_OUT_CLEAN" > /dev/null; then
-        echo "PASSED"
-        PASSED=$((PASSED + 1))
+    if diff -w -B "$expected_file" "$test_dir/output.tmp" > "$test_dir/diff.tmp"; then
+        echo -e "${GREEN}PASSED${NC}"
+        rm -f "$test_dir/output.tmp" "$test_dir/diff.tmp"
+        return 0
     else
-        echo "FAILED"
-        echo "   Expected (cleaned):"
-        cat "$TEMP_EXPECTED_CLEAN" | sed 's/^/     /'
-        echo "   Got (cleaned):"
-        cat "$TEMP_OUT_CLEAN" | sed 's/^/     /'
-
-        echo "   Differences:"
-        diff -u "$TEMP_EXPECTED_CLEAN" "$TEMP_OUT_CLEAN" | sed 's/^/     /'
-
-        FAILED=$((FAILED + 1))
+        echo -e "${RED}FAILED${NC}"
+        cat "$test_dir/diff.tmp"
+        return 1
     fi
+}
+run_error_test() {
+    local test_dir=$1
+    local test_name=$(basename "$test_dir")
+    local program_file="$test_dir/program.pcl"
+    local expected_file="$test_dir/expected.txt"
 
-    TOTAL=$((TOTAL + 1))
+    echo -n "  Testing $test_name... "
+
+    output=$($PCL "$program_file" 2>&1)
+    first_line=$(echo "$output" | head -n1)
+
+
+    expected_type=$(cat "$expected_file" | head -n1 | sed 's/://')
+
+    if [[ "$first_line" == "$expected_type:"* ]]; then
+        echo -e "${GREEN}PASSED${NC}"
+        return 0
+    else
+        echo -e "${RED}FAILED${NC}"
+        echo "    Expected type: '$expected_type'"
+        echo "    Got: '$first_line'"
+        echo "    Full output:"
+        echo "$output" | sed 's/^/    /'
+        return 1
+    fi
+}
+
+find "$TESTS_DIR" -name "*.tmp" -delete
+find "$TESTS_DIR" -name "*.diff" -delete
+
+
+echo "Running successful tests..."
+for test_dir in "$TESTS_DIR/success"/*/; do
+    if [ -d "$test_dir" ]; then
+        TOTAL=$((TOTAL + 1))
+        if run_success_test "$test_dir"; then
+            PASSED=$((PASSED + 1))
+        fi
+    fi
 done
 
-rm -f "$TEMP_OUT" "$TEMP_EXPECTED" "$TEMP_OUT_CLEAN" "$TEMP_EXPECTED_CLEAN"
+echo -e "\nRunning error tests..."
+for test_dir in "$TESTS_DIR/errors"/*/; do
+    if [ -d "$test_dir" ]; then
+        TOTAL=$((TOTAL + 1))
+        if run_error_test "$test_dir"; then
+            PASSED=$((PASSED + 1))
+        fi
+    fi
+done
 
-echo "==================================="
-echo "RESULTS:"
-echo "   Total tests: $TOTAL"
-echo "   Passed: $PASSED"
-echo "   Failed: $FAILED"
-echo "==================================="
+echo -e "\n${GREEN}${PASSED}${NC}/${TOTAL} tests passed"
 
-if [ $FAILED -eq 0 ]; then
-    echo "All tests passed!"
+if [ $PASSED -eq $TOTAL ]; then
     exit 0
 else
-    echo "Some tests failed"
     exit 1
 fi

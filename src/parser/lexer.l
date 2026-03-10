@@ -17,8 +17,6 @@ extern language::AST* ast_ptr;
 
 namespace yy {
     int yycolno = 1;
-    std::string current_line;
-    std::string last_complete_line;
 }
 
 #define SET_LOC_BEGIN \
@@ -30,8 +28,7 @@ namespace yy {
     yylloc->end.column = yy::yycolno + yyleng - 1
 
 #define UPDATE_COLUMN \
-    yy::yycolno += yyleng; \
-    yy::current_line.append(yytext, yyleng)
+    yy::yycolno += yyleng
 %}
 
 %%
@@ -54,7 +51,6 @@ namespace yy {
             { yylineno, yy::yycolno - yyleng },
             { yylineno, yy::yycolno }
         };
-        diagnostic.line_text = yy::current_line;
         diagnostic.add_message.push_back("use a smaller integer value");
 
         throw LexicalError(std::move(diagnostic));
@@ -87,27 +83,18 @@ namespace yy {
 "\r\n" {
     SET_LOC_BEGIN;
     SET_LOC_END;
-
-    yy::last_complete_line = yy::current_line;
-    yy::current_line.clear();
     yy::yycolno = 1;
 }
 
 "\n" {
     SET_LOC_BEGIN;
     SET_LOC_END;
-
-    yy::last_complete_line = yy::current_line;
-    yy::current_line.clear();
     yy::yycolno = 1;
 }
 
 "\r" {
     SET_LOC_BEGIN;
     SET_LOC_END;
-
-    yy::last_complete_line = yy::current_line;
-    yy::current_line.clear();
     yy::yycolno = 1;
 }
 
@@ -152,7 +139,6 @@ namespace yy {
         { yylineno, yy::yycolno - 1 },
         { yylineno, yy::yycolno }
     };
-    diagnostic.line_text = yy::current_line;
     diagnostic.add_message.push_back("remove this character or replace it with a valid token");
 
     throw LexicalError(std::move(diagnostic));

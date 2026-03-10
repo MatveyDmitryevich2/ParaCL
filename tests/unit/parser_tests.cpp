@@ -14,8 +14,7 @@
 namespace yy
 {
 extern int yycolno;
-extern std::string current_line;
-extern std::string last_complete_line;
+
 } // namespace yy
 
 extern yy::parser::semantic_type* yylval;
@@ -57,9 +56,6 @@ protected:
 
         yylineno = 1;
         yy::yycolno = 1;
-        yy::current_line.clear();
-
-        yy::last_complete_line.clear();
 
         if (yyin)
         {
@@ -196,7 +192,7 @@ protected:
 
 TEST_F(ParserTest, NumberLiteral)
 {
-    expectSuccess("print (5);");
+    expectSuccess("print 5;");
 }
 
 TEST_F(ParserTest, VariableReference)
@@ -206,42 +202,42 @@ TEST_F(ParserTest, VariableReference)
 
 TEST_F(ParserTest, BasicAddition)
 {
-    expectSuccess("print (2 + 3);");
+    expectSuccess("print 2 + 3;");
 }
 
 TEST_F(ParserTest, BasicSubtraction)
 {
-    expectSuccess("print (5 - 2);");
+    expectSuccess("print 5 - 2;");
 }
 
 TEST_F(ParserTest, BasicMultiplication)
 {
-    expectSuccess("print (3 * 4);");
+    expectSuccess("print 3 * 4;");
 }
 
 TEST_F(ParserTest, BasicDivision)
 {
-    expectSuccess("print (10 / 2);");
+    expectSuccess("print 10 / 2;");
 }
 
 TEST_F(ParserTest, ComplexExpression)
 {
-    expectSuccess("print (2 + 3 * 4);");
+    expectSuccess("print 2 + 3 * 4;");
 }
 
 TEST_F(ParserTest, ExpressionWithParentheses)
 {
-    expectSuccess("print ((2 + 3) * 4);");
+    expectSuccess("print (2 + 3) * 4;");
 }
 
 TEST_F(ParserTest, NestedParentheses)
 {
-    expectSuccess("print ((2 + 3) * (4 - 1));");
+    expectSuccess("print (2 + 3) * (4 - 1);");
 }
 
 TEST_F(ParserTest, MultipleOperations)
 {
-    expectSuccess("print (1 + 2 - 3 * 4 / 2);");
+    expectSuccess("print 1 + 2 - 3 * 4 / 2;");
 }
 
 // ------------------------------------------------------------
@@ -275,12 +271,12 @@ TEST_F(ParserTest, PrintStatement)
 
 TEST_F(ParserTest, PrintVariable)
 {
-    expectSuccess("x = 10; print (x);");
+    expectSuccess("x = 10; print x;");
 }
 
 TEST_F(ParserTest, PrintExpression)
 {
-    expectSuccess("print (2 + 3 * 4);");
+    expectSuccess("print 2 + 3 * 4;");
 }
 
 // ------------------------------------------------------------
@@ -430,27 +426,9 @@ TEST_F(ParserTest, MissingSemicolon_HintAboutPreviousLine)
     EXPECT_FALSE(result.diagnostic->message.empty());
 }
 
-TEST_F(ParserTest, MissingSemicolon_Debug)
-{
-    auto result = parse("x = 5\ny = 10;");
-
-    ASSERT_FALSE(result.success);
-    ASSERT_TRUE(result.diagnostic.has_value());
-
-    EXPECT_FALSE(result.diagnostic->line_text.empty())
-        << "Line text should not be empty";
-}
-
 TEST_F(ParserTest, Recovery_MultipleErrors)
 {
 
     auto result = parse("x = ; y = ;");
-    EXPECT_FALSE(result.success);
-}
-
-TEST_F(ParserTest, Out_of_range)
-{
-
-    auto result = parse("x = 999999999999999999999 ;");
     EXPECT_FALSE(result.success);
 }

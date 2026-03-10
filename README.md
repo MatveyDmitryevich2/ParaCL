@@ -74,12 +74,14 @@ ctest -V
 ```
 # Run specific test suites
 ```bash
-# All interpreter tests (42 tests)
+# All interpreter tests
 ./build/tests/pcl_tests --gtest_filter=InterpreterTest.*
 
-# All parser tests (33 tests)
+# All parser tests
 ./build/tests/pcl_tests --gtest_filter=ParserTest.*
 
+# All lexer tests
+./build/tests/pcl_tests --gtest_filter=LexerTest.*
 # Filter tests by name pattern
 
 ## Arithmetic tests

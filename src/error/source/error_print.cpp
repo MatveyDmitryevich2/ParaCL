@@ -1,3 +1,5 @@
+#include <cstring>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -37,11 +39,30 @@ void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
         std::cout << " --> " << filename << ":" << range.begin.line << ":"
                   << range.begin.column << '\n';
 
-        if (!diagnostic.line_text.empty())
+        std::string line_text = diagnostic.line_text;
+
+        if (line_text.empty() && !filename.empty())
+        {
+            std::ifstream file(filename);
+            if (file.is_open())
+            {
+                std::string line;
+                for (int i = 1; i <= range.begin.line; ++i)
+                {
+                    if (!std::getline(file, line))
+                    {
+                        line = "";
+                        break;
+                    }
+                }
+                line_text = std::move(line);
+            }
+        }
+
+        if (!line_text.empty())
         {
             std::cout << "  |\n";
-            std::cout << range.begin.line << " | " << diagnostic.line_text
-                      << '\n';
+            std::cout << range.begin.line << " | " << line_text << '\n';
             std::cout << "  | ";
 
             for (int i = 1; i < range.begin.column; ++i)
@@ -66,6 +87,6 @@ void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
 
     for (const std::string& add_message : diagnostic.add_message)
     {
-        std::cout << "  = add_message: " << add_message << '\n';
+        std::cout << "  = " << add_message << '\n';
     }
 }
