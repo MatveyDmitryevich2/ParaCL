@@ -34,13 +34,7 @@ run_success_test() {
         return 1
     fi
 }
-
-strip_ansi() {
-    sed 's/\x1b\[[0-9;]*m//g'
-}
-
-run_error_test()
-{
+run_error_test() {
     local test_dir=$1
     local test_name=$(basename "$test_dir")
     local program_file="$test_dir/program.pcl"
@@ -49,21 +43,20 @@ run_error_test()
     echo -n "  Testing $test_name... "
 
     output=$($PCL "$program_file" 2>&1)
+    first_line=$(echo "$output" | head -n1)
 
 
-    first_line=$(echo "$output" | head -n1 | tr -d '\r' | strip_ansi | xargs)
-
-
-    expected_type=$(cat "$expected_file" | head -n1 | tr -d '\r' | sed 's/:[[:space:]]*$//' | xargs)
-
+    expected_type=$(cat "$expected_file" | head -n1 | sed 's/://')
 
     if [[ "$first_line" == "$expected_type:"* ]]; then
         echo -e "${GREEN}PASSED${NC}"
         return 0
     else
         echo -e "${RED}FAILED${NC}"
-        echo "    Expected: '$expected_type'"
+        echo "    Expected type: '$expected_type'"
         echo "    Got: '$first_line'"
+        echo "    Full output:"
+        echo "$output" | sed 's/^/    /'
         return 1
     fi
 }
