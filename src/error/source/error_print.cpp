@@ -5,15 +5,6 @@
 
 #include "error/error_print.hpp"
 
-#define RESET "\033[0m"
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define BOLD "\033[1m"
-
 namespace
 {
 const char* KindToString(DiagnosticKind kind)
@@ -34,39 +25,19 @@ const char* KindToString(DiagnosticKind kind)
         return "error";
     }
 }
-
-const char* KindToColor(DiagnosticKind kind)
-{
-    switch (kind)
-    {
-    case DiagnosticKind::Lexical:
-        return MAGENTA;
-    case DiagnosticKind::Syntax:
-        return YELLOW;
-    case DiagnosticKind::Semantic:
-        return CYAN;
-    case DiagnosticKind::Runtime:
-        return RED;
-    case DiagnosticKind::Internal:
-        return RED BOLD;
-    default:
-        return RESET;
-    }
-}
 } // namespace
 
 void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
 {
-
-    std::cout << KindToColor(diagnostic.kind) << KindToString(diagnostic.kind)
-              << RESET << ": " << diagnostic.message << '\n';
+    std::cout << KindToString(diagnostic.kind) << ": " << diagnostic.message
+              << '\n';
 
     if (diagnostic.range.has_value())
     {
         const SourceRange& range = diagnostic.range.value();
 
-        std::cout << RED << " --> " << RESET << filename << ":"
-                  << range.begin.line << ":" << range.begin.column << '\n';
+        std::cout << " --> " << filename << ":" << range.begin.line << ":"
+                  << range.begin.column << '\n';
 
         std::string line_text = diagnostic.line_text;
 
@@ -90,10 +61,9 @@ void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
 
         if (!line_text.empty())
         {
-            std::cout << "  " << RED << "|" << RESET << "\n";
-            std::cout << RED << range.begin.line << " | " << RESET << line_text
-                      << '\n';
-            std::cout << "  " << RED << "|" << RESET << " ";
+            std::cout << "  |\n";
+            std::cout << range.begin.line << " | " << line_text << '\n';
+            std::cout << "  | ";
 
             for (int i = 1; i < range.begin.column; ++i)
             {
@@ -106,17 +76,17 @@ void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
                 width = 1;
             }
 
-            std::cout << RED;
             for (int i = 0; i < width; ++i)
             {
                 std::cout << '^';
             }
-            std::cout << RESET << '\n';
+
+            std::cout << '\n';
         }
     }
 
     for (const std::string& add_message : diagnostic.add_message)
     {
-        std::cout << "  " << RED << "=" << RESET << " " << add_message << '\n';
+        std::cout << "  = " << add_message << '\n';
     }
 }
